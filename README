@@ -1,0 +1,30 @@
+Damascene, version 0.1.5
+
+This software is a reexamination of the gPb image contour detector,
+using Nvidia Graphics Processors.  The software builds under Linux,
+with CUDA version 2.3, with gcc 4.3.
+Damascene depends on an external LAPACK library for part of the
+generalized eigensolver used in Normalized Cuts.  We have had the most
+success using AMD's ACML LAPACK, which is freely available from
+http://www.amd.com/acml
+Please modify the common.mk file so that ACMLDIR points to the root
+directory where you installed ACML, or modify the common.mk file to
+link against another lapack.
+
+The defaults in the common.mk file assume you are compiling for an
+Nvidia processor with compute capability >= 1.2 (ie, GTX280, etc.) To
+compile for processors with compute capability 1.1 (ie, 9800GTX,
+etc.), please change the SMVERSIONFLAGS variable in common.mk to
+-arch sm_11.
+
+You will also need to modify the CUDA_SDK_PATH and CUDA_INSTALL_PATH
+variables to point to your CUDA installation.
+
+Please direct any questions or comments to Bryan Catanzaro,
+catanzar@cs.berkeley.edu
+
+--------
+Changelog
+
+0.1.4: Fixed bug in k-means, pointed out by Andreas Mueller (amueller@ais.uni-bonn.de)
+0.1.3: Updated to enable compilation under CUDA 2.3
