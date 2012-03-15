@@ -254,7 +254,7 @@ int main(int argc, char** argv) {
   uint timer_specific;
 #endif
 
-  unsigned int totalMemory, availableMemory;
+  size_t totalMemory, availableMemory;
   cuMemGetInfo(&availableMemory,&totalMemory );
   printf("Available %u bytes on GPU\n", availableMemory);
 

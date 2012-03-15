@@ -410,7 +410,7 @@ void lanczos(int p_nMatrixDimension, dim3 gridDim, dim3 blockDim,
 		printf("Error in line %d in %s : %s\n",__LINE__,__FILE__, cudaGetErrorString(ce));
 		//return;
 	}
-        unsigned int totalMemory, availableMemory;
+        size_t totalMemory, availableMemory;
         cuMemGetInfo(&availableMemory,&totalMemory );
         printf("Available %u bytes on GPU\n", availableMemory);
 

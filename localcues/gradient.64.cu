@@ -11,7 +11,7 @@
 #include <assert.h>
 
 
-#define uint unsigned int
+#define size_t size_t
 
 #define IMUL(a, b) __mul24(a, b)
 
@@ -388,7 +388,7 @@ void dispatchIntegrationT(int width, int height, int* devImage, int binIndex, in
 void formIntegralImages(int width, int height, int nbins, int* devImage,
                         int* devImageT, int* devIntegralCol, int* devIntegralColT,
                         int binPitch, int* devIntegrals) {
-  //uint integralTimer;
+  //size_t integralTimer;
   //cutCreateTimer(&integralTimer);
   //cutStartTimer(integralTimer);
   //int pixelPitch = findPitchInInts(width * height);
@@ -456,14 +456,14 @@ void formIntegralImages(int width, int height, int nbins, int* devImage,
 
 
 
-float* getImage(uint width, uint height, float* devImage) {
+float* getImage(size_t width, size_t height, float* devImage) {
   int imageSize = width * height * sizeof(float);
   float* result = (float*)malloc(imageSize);
   CUDA_SAFE_CALL(cudaMemcpy(result, devImage, imageSize, cudaMemcpyDeviceToHost));
   return result;
 }
 
-int* getImage(uint width, uint height, int* devImage) {
+int* getImage(size_t width, size_t height, int* devImage) {
   int imageSize = width * height * sizeof(int);
   int* result = (int*)malloc(imageSize);
   CUDA_SAFE_CALL(cudaMemcpy(result, devImage, imageSize, cudaMemcpyDeviceToHost));
@@ -498,10 +498,10 @@ int* devIntegralColT;
 int* devIntegralsT;
 int* devIntegrals;
 float* devGradients;
-uint norients;
-uint nscale;
+size_t norients;
+size_t nscale;
 
-int initializeGradients(uint widthIn, uint heightIn, uint borderIn, uint maxbins, uint norientsIn, uint nscaleIn) {
+int initializeGradients(size_t widthIn, size_t heightIn, size_t borderIn, size_t maxbins, size_t norientsIn, size_t nscaleIn) {
   width = widthIn;
   height = heightIn;
   border = borderIn;
@@ -550,7 +550,7 @@ void finalizeGradients() {
 
 
 
-float* gradients(float* devImage, uint nbins, bool blur, float sigma, uint* radii) {
+float* gradients(float* devImage, size_t nbins, bool blur, float sigma, size_t* radii) {
  
   quantizeImage(width, height, nbins, devImage, devQuantized);
   mirrorImage(width, height, border, devQuantized, devMirrored);
@@ -580,7 +580,7 @@ float* gradients(float* devImage, uint nbins, bool blur, float sigma, uint* radi
   return devGradients;
 }
 
-float* gradients(int* devImage, uint nbins, bool blur, float sigma, uint* radii) {
+float* gradients(int* devImage, size_t nbins, bool blur, float sigma, size_t* radii) {
  
   mirrorImage(width, height, border, devImage, devMirrored);
     
