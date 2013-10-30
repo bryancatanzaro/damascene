@@ -87,3 +87,5 @@ env.Append(CCFLAGS = ['-O3'])
     
 Export('env')
 
+damascene = SConscript(os.path.join('src', 'SConscript'),
+                       variant_dir='build')

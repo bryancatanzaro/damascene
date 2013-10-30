@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cuda.h>
-#include <cutil.h>
 
 #define TEXTON32 1
 #define TEXTON64 2

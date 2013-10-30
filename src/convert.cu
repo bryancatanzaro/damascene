@@ -3,7 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cuda.h>
-#include <cutil.h>
+#include "util.h"
+#include "ppm_util.h"
 
 #define XBLOCK 16
 #define YBLOCK 16
@@ -87,8 +88,7 @@ __global__ void normalizeLab_kernel(uint width, uint height, float* devL, float*
 
 void loadPPM_rgbU(char* filename, uint* p_width, uint* p_height, uint** p_devRgbU) {
   unsigned int* data;
-  cutLoadPPM4ub(filename, (unsigned char**)&data, p_width, p_height);
-  //cutLoadPPMub(filename, (unsigned char**)&data, p_width, p_height);
+  loadPPM4ub(filename, (unsigned char**)&data, p_width, p_height);
   uint imageSize = sizeof(uint) * (*p_width) * (*p_height);
   cudaMalloc((void**)p_devRgbU, imageSize);
   cudaMemcpy(*p_devRgbU, data, imageSize, cudaMemcpyHostToDevice);
