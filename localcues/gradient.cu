@@ -11,7 +11,7 @@
 #include <assert.h>
 
 
-#define uint unsigned int
+#define size_t unsigned int
 
 #define IMUL(a, b) __mul24(a, b)
 
@@ -119,14 +119,14 @@ void formIntegralImages(int width, int height, int nbins, int* devImage,
 
 
 
-float* getImage(uint width, uint height, float* devImage) {
+float* getImage(size_t width, size_t height, float* devImage) {
   int imageSize = width * height * sizeof(float);
   float* result = (float*)malloc(imageSize);
   CUDA_SAFE_CALL(cudaMemcpy(result, devImage, imageSize, cudaMemcpyDeviceToHost));
   return result;
 }
 
-int* getImage(uint width, uint height, int* devImage) {
+int* getImage(size_t width, size_t height, int* devImage) {
   int imageSize = width * height * sizeof(int);
   int* result = (int*)malloc(imageSize);
   CUDA_SAFE_CALL(cudaMemcpy(result, devImage, imageSize, cudaMemcpyDeviceToHost));
@@ -161,10 +161,10 @@ int* devIntegralColT;
 int* devIntegralsT;
 int* devIntegrals;
 float* devGradients;
-uint norients;
-uint nscale;
+size_t norients;
+size_t nscale;
 
-int initializeGradients(uint widthIn, uint heightIn, uint borderIn, uint maxbins, uint norientsIn, uint nscaleIn, uint textonChoice) {
+int initializeGradients(unsigned long widthIn, unsigned long heightIn, unsigned long borderIn, unsigned long maxbins, unsigned long norientsIn, unsigned long nscaleIn, unsigned long textonChoice) {
   width = widthIn;
   height = heightIn;
   border = borderIn;
@@ -207,7 +207,7 @@ void finalizeGradients() {
 
 
 
-float* gradients(float* devImage, uint nbins, bool blur, float sigma, uint* radii, int textonChoice) {
+float* gradients(float* devImage, unsigned long nbins, bool blur, float sigma, unsigned long* radii, int textonChoice) {
  
   quantizeImage(width, height, nbins, devImage, devQuantized);
   mirrorImage(width, height, border, devQuantized, devMirrored);
@@ -244,7 +244,7 @@ float* gradients(float* devImage, uint nbins, bool blur, float sigma, uint* radi
   return devGradients;
 }
 
-float* gradients(int* devImage, uint nbins, bool blur, float sigma, uint* radii, int textonChoice) {
+float* gradients(int* devImage, unsigned long nbins, bool blur, float sigma, unsigned long* radii, int textonChoice) {
  
   mirrorImage(width, height, border, devImage, devMirrored);
     

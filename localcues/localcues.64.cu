@@ -12,7 +12,7 @@
 #include "stencilMVM.h"
 
 
-uint radii[4]={3,5,10,20};
+size_t radii[4]={3,5,10,20};
 
 float** filters;
 
@@ -97,7 +97,7 @@ void savgol_filter(float* filt, int d, float inra, float inrb, float theta)
 
 }
 
-void construct_parabola_filters(uint number, uint* radii, uint norients)
+void construct_parabola_filters(size_t number, size_t* radii, size_t norients)
 {
   filters = (float**)malloc(sizeof(float*) * number);
 
@@ -168,19 +168,19 @@ void writeHist(char* file, int width, int height, int norients, int nscale, int 
     close(fd);
 }
 
-void bg(uint width, uint height, uint norients, uint nscale, uint* bgRadii, float** filters, float* devL, float** p_devBg, int cuePitchInFloats)
+void bg(size_t width, size_t height, size_t norients, size_t nscale, size_t* bgRadii, float** filters, float* devL, float** p_devBg, int cuePitchInFloats)
 {
   cudaMalloc((void**)p_devBg, sizeof(float) * cuePitchInFloats * norients * nscale);
   float* devBg = *p_devBg;
 
 
-  uint nbins = 25;
+  size_t nbins = 25;
   float sigma = 0.1;
   bool blur = true;
-  uint border = 30;
+  size_t border = 30;
 
-  uint borderWidth = width + 2 * border;
-  uint borderHeight = height + 2 * border;
+  size_t borderWidth = width + 2 * border;
+  size_t borderHeight = height + 2 * border;
   float* devGradients = gradients(devL, nbins, blur, sigma, bgRadii);
   for(int scale = 0; scale < nscale; scale++) {
     int radius = bgRadii[scale];
@@ -189,19 +189,19 @@ void bg(uint width, uint height, uint norients, uint nscale, uint* bgRadii, floa
   }
 }
 
-void cg(uint width, uint height, uint norients, uint nscale, uint* cgRadii, float** filters, float* devInput, float** p_devCg, int cuePitchInFloats)
+void cg(size_t width, size_t height, size_t norients, size_t nscale, size_t* cgRadii, float** filters, float* devInput, float** p_devCg, int cuePitchInFloats)
 {
   cudaMalloc((void**)p_devCg, sizeof(float) * cuePitchInFloats * norients * nscale);
   float* devCg = *p_devCg;
 
 
-  uint nbins = 25;
+  size_t nbins = 25;
 
   float sigma = 0.05;
   bool blur = true;
-  uint border = 30;
-  uint borderWidth = width + 2 * border;
-  uint borderHeight = height + 2 * border;
+  size_t border = 30;
+  size_t borderWidth = width + 2 * border;
+  size_t borderHeight = height + 2 * border;
   
   float* devGradients = gradients(devInput, nbins, blur, sigma, cgRadii);
   for(int scale = 0; scale < nscale; scale++) {
@@ -211,20 +211,20 @@ void cg(uint width, uint height, uint norients, uint nscale, uint* cgRadii, floa
   }
 }
 
-void tg(uint width, uint height, uint norients, uint nscale, uint* tgRadii, float** filters, int* devTextons, float** p_devTg, int cuePitchInFloats)
+void tg(size_t width, size_t height, size_t norients, size_t nscale, size_t* tgRadii, float** filters, int* devTextons, float** p_devTg, int cuePitchInFloats)
 {
   cudaMalloc((void**)p_devTg, sizeof(float) * cuePitchInFloats * norients * nscale);
   float* devTg = *p_devTg;
 
 
-  uint nbins = 64;
+  size_t nbins = 64;
 
   float sigma = 0;
   bool blur = false;
-  uint border = 30;
+  size_t border = 30;
  
-  uint borderWidth = width + 2 * border;
-  uint borderHeight = height + 2 * border;
+  size_t borderWidth = width + 2 * border;
+  size_t borderHeight = height + 2 * border;
   
   float* devGradients = gradients(devTextons, nbins, blur, sigma, tgRadii);  
   for(int scale = 0; scale < nscale; scale++) {
@@ -237,10 +237,10 @@ void tg(uint width, uint height, uint norients, uint nscale, uint* tgRadii, floa
 
 void localCues(int width, int height, float* devL, float* devA, float* devB, int* devTextons, float** devBg, float** devCga, float** devCgb, float** devTg, int* p_cuePitchInFloats) {
   printf("Beginning Local cues computation\n");
-  uint norients = 8;
-  uint nscale = 3;
-  uint border = 30;
-  uint maxbins = 64;
+  size_t norients = 8;
+  size_t nscale = 3;
+  size_t border = 30;
+  size_t maxbins = 64;
   construct_parabola_filters(4, radii, norients);
   int nPixels = width * height;
   int cuePitchInFloats = findPitchInFloats(nPixels);
@@ -251,7 +251,7 @@ void localCues(int width, int height, float* devL, float* devA, float* devB, int
   gpu_parabola_init(norients, width, height, border);
 
   
-  uint cueTimer;
+  size_t cueTimer;
   cutCreateTimer(&cueTimer);
   cutStartTimer(cueTimer);
   bg(width, height, norients, nscale, &radii[0], &filters[0], devL, devBg, cuePitchInFloats);

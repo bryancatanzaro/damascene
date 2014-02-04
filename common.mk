@@ -6,7 +6,9 @@
 
 .SUFFIXES : .cu .cu_dbg_o .c_dbg_o .cpp_dbg_o .cu_rel_o .c_rel_o .cpp_rel_o .cubin
 
-CUDA_INSTALL_PATH ?= /usr/local/cuda
+CUDA_INSTALL_PATH ?= /opt/cuda
+NVIDIA_CURRENT ?= /usr/lib/nvidia-current
+ACML_LAPACK ?= /opt/acml5.1.0/ifort64
 
 ifdef cuda-install
 	CUDA_INSTALL_PATH := $(cuda-install)
@@ -14,7 +16,7 @@ endif
 
 
 
-CUDA_SDK_PATH ?= $(HOME)/cuda
+CUDA_SDK_PATH ?= $(HOME)/NVIDIA_GPU_Computing_SDK
 
 # Basic directory setup for SDK
 # (override directories only if they are not already defined)
@@ -28,7 +30,7 @@ SODIR      ?= $(ROOTSODIR)/linux
 
 LIBDIR     := $(CUDA_SDK_PATH)/C/lib 
 COMMONDIR  := $(CUDA_SDK_PATH)/C/common
-ACMLDIR    ?= /opt/amd/acml4.3.0/ifort64
+ACMLDIR    ?= $(ACML_LAPACK)
 
 ifdef cuda-2.1
   CUDALIBSUFFIX := lib
@@ -67,7 +69,7 @@ ifeq ($(USEGLLIB),1)
 endif
 
 # Libs
-LIB       := -L$(CUDA_INSTALL_PATH)/$(CUDALIBSUFFIX) -L$(LIBDIR) -L$(COMMONDIR)/lib -L$(ACMLDIR)/lib -lcuda -lcudart -lcublas -lblas -lacml -lacml_mv -L../stencilMatrixMultiply/lib/linux/release ${OPENGLLIB} ${LIB}
+LIB       := -L$(CUDA_INSTALL_PATH)/$(CUDALIBSUFFIX) -L$(LIBDIR) -L$(COMMONDIR)/lib -L$(ACMLDIR)/lib -lcuda -lcudart -lcublas -lblas -lacml -L../stencilMatrixMultiply/lib/linux/release ${OPENGLLIB} ${LIB}
 
 # Warning flags
 CXXWARN_FLAGS := \
@@ -151,7 +153,7 @@ ifeq ($(USEPARAMGL),1)
 endif
 
 # Libs
-LIB       := -L$(CUDA_INSTALL_PATH)/lib -L$(LIBDIR) -L$(COMMONDIR)/lib -lcuda -lcudart ${OPENGLLIB} $(PARAMGLLIB) ${LIB}
+LIB       := -L$(NVIDIA_CURRENT) -L$(CUDA_INSTALL_PATH)/lib -L$(LIBDIR) -L$(COMMONDIR)/lib -lcuda -lcudart ${OPENGLLIB} $(PARAMGLLIB) ${LIB}
 
 
 # Lib/exe configuration
@@ -160,7 +162,7 @@ ifneq ($(STATIC_LIB),)
 	TARGET   := $(subst .a,$(LIBSUFFIX).a,$(LIBDIR)/$(STATIC_LIB))
 	LINKLINE  = ar qv $(TARGET) $(OBJS) 
 else
-	LIB += -lcutil$(LIBSUFFIX)
+	LIB += -lcutil_x86_64$(LIBSUFFIX)
 	# Device emulation configuration
 	ifeq ($(emu), 1)
 		NVCCFLAGS   += -deviceemu
