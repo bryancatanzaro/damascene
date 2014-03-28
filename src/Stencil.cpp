@@ -1,4 +1,4 @@
-#include "Stencil.h"
+#include <damascene/Stencil.h>
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
@@ -96,30 +96,30 @@ float* Stencil::readStencilMatrix(char* filename) {
 
   assert(fp != NULL);
   float* array = (float*)malloc(stencilArea * matrixPitchInFloats * sizeof(float));
-  for(int i = 0; i < stencilArea * matrixPitchInFloats; i++) {
+  for(unsigned int i = 0; i < stencilArea * matrixPitchInFloats; i++) {
     array[i] = 0.0f;
   }
   int n = 0;
-  fread(&n,sizeof(int),1,fp);
+  size_t b = fread(&n,sizeof(int),1,fp);
 
   assert(n == (width * height)); 
 
-  int nnz = 0;
-  fread(&nnz,sizeof(int),1,fp);
+  unsigned int nnz = 0;
+  b = fread(&nnz,sizeof(unsigned int),1,fp);
   assert(nnz < stencilArea * width * height);
 
   int* x = new int[stencilArea]; //col indices;
   double* z = new double[stencilArea]; //values
                          
-  int nz = 0;
+  unsigned int nz = 0;
   for (int row = 0; row < n; row++) {
-    fread(&nz,sizeof(int),1,fp); //number of entries in this row
+    b = fread(&nz,sizeof(unsigned int),1,fp); //number of entries in this row
     assert(nz <= stencilArea);
     
-    fread(z,sizeof(double),nz,fp); //value
-    fread(x,sizeof(int),nz,fp);    //col index
+    b = fread(z,sizeof(double),nz,fp); //value
+    b = fread(x,sizeof(int),nz,fp);    //col index
     
-    for (int col = 0; col < nz; col++) {
+    for (unsigned int col = 0; col < nz; col++) {
   //     if ((row == 43) && (x[col] == 55)) {
 //         printf("Element 43, 55 = %f\n", z[col]);
 //       }
@@ -127,6 +127,7 @@ float* Stencil::readStencilMatrix(char* filename) {
       array[index] = (float)z[col];
     } 
   }
+  assert (b > 0);
   fclose(fp);
   
   delete[] x;

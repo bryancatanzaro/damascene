@@ -15,10 +15,10 @@ int sign(int i)
 
 }
 float* gaussian(
-   double sigma, unsigned int deriv, bool hlbrt, unsigned long support)
+   double sigma, int deriv, bool hlbrt, long support)
 {
    /* enlarge support so that hilbert transform can be done efficiently */
-   unsigned long support_big = support;
+   long support_big = support;
 //   if(hlbrt)
 //   {
 //       printf("hilebert not supported\n");
@@ -35,20 +35,20 @@ float* gaussian(
    const double sigma2_inv = double(1)/(sigma*sigma);
    const double neg_two_sigma2_inv = double(-0.5)*sigma2_inv;
    /* compute gaussian (or gaussian derivative) */
-   unsigned long size = 2*support_big + 1;
+   long size = 2*support_big + 1;
    float *m = new float[size];
    double x = -(static_cast<double>(support_big)); 
    if (deriv == 0) {
       /* compute guassian */
-      for (unsigned long n = 0; n < size; n++, x++)
+      for (long n = 0; n < size; n++, x++)
          m[n] = exp(x*x*neg_two_sigma2_inv);
    } else if (deriv == 1) {
       /* compute gaussian first derivative */
-      for (unsigned long n = 0; n < size; n++, x++)
+      for (long n = 0; n < size; n++, x++)
          m[n] = exp(x*x*neg_two_sigma2_inv) * (-x);
    } else if (deriv == 2) {
       /* compute gaussian second derivative */
-      for (unsigned long n = 0; n < size; n++, x++) {
+      for (long n = 0; n < size; n++, x++) {
          double x2 = x * x;
          m[n] = exp(x2*neg_two_sigma2_inv) * (x2*sigma2_inv - 1);
       }
@@ -169,20 +169,20 @@ double support_y_rotated(double support_x, double support_y, double ori) {
    double y1_mag = abs(sx_sin_ori + sy_cos_ori);
    return (y0_mag > y1_mag) ? y0_mag : y1_mag;
 }
-unsigned long support_x_rotated(
-   unsigned long support_x, unsigned long support_y, double ori)
+long support_x_rotated(
+   long support_x, long support_y, double ori)
 {
-   return static_cast<unsigned long>(
+   return static_cast<long>(
       ceil(support_x_rotated(
          static_cast<double>(support_x), static_cast<double>(support_y), ori
       ))
    );
 }
 
-unsigned long support_y_rotated(
-   unsigned long support_x, unsigned long support_y, double ori)
+long support_y_rotated(
+   long support_x, long support_y, double ori)
 {
-   return static_cast<unsigned long>(
+   return static_cast<long>(
       ceil(support_y_rotated(
          static_cast<double>(support_x), static_cast<double>(support_y), ori
       ))
@@ -193,10 +193,10 @@ template <typename T>
 void compute_rotate_2D(
    const T*      m_src,       /* source matrix */
    T*            m_dst,       /* destination matrix */
-   unsigned long size_x_src,  /* size of source */
-   unsigned long size_y_src,
-   unsigned long size_x_dst,  /* size of destination */
-   unsigned long size_y_dst,
+   long size_x_src,  /* size of source */
+   long size_y_src,
+   long size_x_dst,  /* size of destination */
+   long size_y_dst,
    double ori)                /* orientation */
 {
    /* check that matrices are nonempty */
@@ -211,20 +211,20 @@ void compute_rotate_2D(
       const double origin_y_src = static_cast<double>((size_y_src - 1)) / 2;
       /* rotate */
       double u = -(static_cast<double>((size_x_dst - 1)) / 2);
-      unsigned long n = 0;
-      for (unsigned long dst_x = 0; dst_x < size_x_dst; dst_x++) {
+      long n = 0;
+      for (long dst_x = 0; dst_x < size_x_dst; dst_x++) {
          double v = -(static_cast<double>((size_y_dst - 1)) / 2);
-         for (unsigned long dst_y = 0; dst_y < size_y_dst; dst_y++) {
+         for (long dst_y = 0; dst_y < size_y_dst; dst_y++) {
             /* reverse rotate by orientation and shift by origin offset */
             double x = u * cos_ori + v * sin_ori + origin_x_src;
             double y = v * cos_ori - u * sin_ori + origin_y_src;
             /* check that location is in first quadrant */
             if ((x >= 0) && (y >= 0)) {
                /* compute integer bounds on location */
-               unsigned long x0 = static_cast<unsigned long>(floor(x));
-               unsigned long x1 = static_cast<unsigned long>(ceil(x));
-               unsigned long y0 = static_cast<unsigned long>(floor(y));
-               unsigned long y1 = static_cast<unsigned long>(ceil(y));
+               long x0 = static_cast<long>(floor(x));
+               long x1 = static_cast<long>(ceil(x));
+               long y0 = static_cast<long>(floor(y));
+               long y1 = static_cast<long>(ceil(y));
                /* check that location is within src matrix */
                if ((0 <= x0) && (x1 < size_x_src) &&
                    (0 <= y0) && (y1 < size_y_src))
@@ -263,15 +263,15 @@ void gaussian_2D(
    double        sigma_x, 
    double        sigma_y,
    double        ori,
-   unsigned int  deriv,
+   int  deriv,
    bool          hlbrt,
-   unsigned long support_x,
-   unsigned long support_y)
+   long support_x,
+   long support_y)
 {
    /* compute size of larger grid for axis-aligned gaussian   */
    /* (reverse rotate corners of bounding box by orientation) */
-   unsigned long support_x_rot = support_x_rotated(support_x, support_y, -ori);
-   unsigned long support_y_rot = support_y_rotated(support_x, support_y, -ori);
+   long support_x_rot = support_x_rotated(support_x, support_y, -ori);
+   long support_y_rot = support_y_rotated(support_x, support_y, -ori);
    /* compute 1D kernels */
    float* mx = gaussian(sigma_x, 0,     false, support_x_rot);
    float* my = gaussian(sigma_y, deriv, hlbrt, support_y_rot);
@@ -280,9 +280,9 @@ void gaussian_2D(
    /* compute 2D kernel from product of 1D kernels */
    int m_size = mx_size* my_size;
    float* m=new float[m_size];
-   unsigned long n = 0;
-   for (unsigned long n_x = 0; n_x < mx_size; n_x++) {
-      for (unsigned long n_y = 0; n_y < my_size; n_y++) {
+   long n = 0;
+   for (long n_x = 0; n_x < mx_size; n_x++) {
+      for (long n_y = 0; n_y < my_size; n_y++) {
          m[n] = mx[n_x] * my[n_y];
          n++;
       }
@@ -292,7 +292,9 @@ void gaussian_2D(
    float* mrotate = new float[(2*support_x + 1)*(2*support_y + 1)];
    compute_rotate_2D(m, mrotate, mx_size, my_size, 2*support_x + 1, 2*support_y + 1, ori);
 
-   delete [] m,mx,my;
+   delete[] m;
+   delete[] mx;
+   delete[] my;
    m = mrotate;
    int size=(2*support_x + 1)*(2*support_y + 1);
    //m = rotate_2D_crop(m, ori, 2*support_x + 1, 2*support_y + 1);
@@ -342,8 +344,8 @@ void gaussian_cs_2D(
    double        sigma_y,
    double        ori,
    double        scale_factor,
-   unsigned long support_x,
-   unsigned long support_y)
+   long support_x,
+   long support_y)
 {
    /* compute standard deviation for center kernel */
    double sigma_x_c = sigma_x / scale_factor;
@@ -403,7 +405,7 @@ void gaussian_cs_2D(
 
 void createTextonFilters(float** filters, int* nFilterCoeff, int** radii, float* scale, int nscales, float elongation=3.0)
 {
-    unsigned int size=0;
+    int size=0;
     for(int n=0; n<nscales; n++)
     {
         int filterLength = ceil(3*scale[n])*2+1;
@@ -415,8 +417,9 @@ void createTextonFilters(float** filters, int* nFilterCoeff, int** radii, float*
 
     int* aradii = *radii;
     int i=0;
-    unsigned int r =0;
-    int support, filterLength;
+    int r =0;
+    int support;
+    int filterLength = 0;
 
     for(int n = 0; n<nscales; n++)
     {

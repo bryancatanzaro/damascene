@@ -21,7 +21,8 @@
 #include "cublas.h"
 #include <acml.h>
 #include <vector>
-#include "stencilMVM.h"
+#include <damascene/stencilMVM.h>
+
 
 
 typedef std::vector<float> floatVector;
@@ -50,7 +51,7 @@ void clearTestMatrix(float* sMatrixValues) {
 void initEigs(int p_nEigNum, int p_nMatrixDimension, float** p_eigenValues, float** devEigVectors)
 {
   (*p_eigenValues) = (float*) malloc(p_nEigNum * sizeof(float));
-  CUDA_SAFE_CALL(cudaMalloc((void**)devEigVectors, p_nMatrixDimension * sizeof(float)*p_nEigNum);)
+  CUDA_SAFE_CALL(cudaMalloc((void**)devEigVectors, p_nMatrixDimension * sizeof(float)*p_nEigNum));
   //memset(*p_eigenValues, 0, p_nEigNum * sizeof(float));
   //memset(*p_eigenVectors, 0, p_nEigNum * p_nMatrixDimension * sizeof(float));
 }
@@ -327,7 +328,7 @@ bool CullumDevice(int i, float* aAlpha, float*aBeta, double* tempAlpha, double* 
 
 
 	doubleVector screenedEigVals;
-	for (int j = 0; j < acceptedEigVals.size(); j++) {
+	for (size_t j = 0; j < acceptedEigVals.size(); j++) {
 		double candidateValue = acceptedEigVals[j];
 		bool accept = true;
 		if (!duplicates[j]) {
@@ -358,9 +359,9 @@ bool CullumDevice(int i, float* aAlpha, float*aBeta, double* tempAlpha, double* 
 	}
 	printf("\n");
 
-	if (screenedEigVals.size() < p_nEigNum)
+	if (int(screenedEigVals.size()) < p_nEigNum)
 		return false;
-	assert (screenedEigVals.size() >= p_nEigNum); //--uncomment later 
+	assert (int(screenedEigVals.size()) >= p_nEigNum); //--uncomment later 
 	int getNEig = p_nEigNum;
 	for(int j = 0; j < tempn; j++) {
 		tempAlpha[j] = (double)aAlpha[j];
@@ -392,8 +393,7 @@ void lanczos(int p_nMatrixDimension, dim3 gridDim, dim3 blockDim,
 	float* aAlpha;
 	float* aTEigVals;
 	float* aaTEigVecs;
-	int nIter = 0;
-
+	
 	float* d_aVectorZ = 0;
 	float* d_aVectorQQ = 0;
 	float* d_aVectorQQPrev = 0;
@@ -410,9 +410,9 @@ void lanczos(int p_nMatrixDimension, dim3 gridDim, dim3 blockDim,
 		printf("Error in line %d in %s : %s\n",__LINE__,__FILE__, cudaGetErrorString(ce));
 		//return;
 	}
-        unsigned int totalMemory, availableMemory;
+        size_t totalMemory, availableMemory;
         cuMemGetInfo(&availableMemory,&totalMemory );
-        printf("Available %u bytes on GPU\n", availableMemory);
+        printf("Available %zu bytes on GPU\n", availableMemory);
 
         float margin = 0.9;
         int maxIterationsThatFitGPU;
@@ -457,21 +457,19 @@ void lanczos(int p_nMatrixDimension, dim3 gridDim, dim3 blockDim,
 	int n = MAXITER + 1;
 	char range = 'I';
 	char order = 'E';
-	double vl;
-	double vu;
+	double vl = 0;
+	double vu = 0;
 	int il = 1;
 	int iu = eigCheck;
 	double abstol = 0.0;
-	int m;
-	int nsplit;
+	int nsplit  = 0;
 	double* w = (double*)malloc(sizeof(double) * n);
 	int* iblock = (int*)malloc(sizeof(int) * n);
 	int* isplit = (int*)malloc(sizeof(int) * n);
 	double* work = (double*)malloc(sizeof(double) * 5 * n);
 	int* iwork = (int*)malloc(sizeof(int) * 3 * n);
 	int* ifail = (int*)malloc(sizeof(int) * eigCheck);
-	int info;
-
+	
 	double* tempAlpha = (double*)malloc(sizeof(double) * n);
 	double* tempBeta = (double*)malloc(sizeof(double) * n);
 	double* tvectors = (double*)malloc(sizeof(double) * n * p_nEigNum);
@@ -480,7 +478,6 @@ void lanczos(int p_nMatrixDimension, dim3 gridDim, dim3 blockDim,
 	int height = theStencil->getHeight();
 	int nDiags = theStencil->getStencilArea();
 	int nPixels = width * height;
-	int radius = theStencil->getRadius();
 	int nDimUnroll = findNDimUnroll(nDiags);
 	int matrixPitchInFloats = findPitchInFloats(nPixels);
 /* 	cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>(); */
@@ -564,7 +561,7 @@ void lanczos(int p_nMatrixDimension, dim3 gridDim, dim3 blockDim,
 
         printf("nIterations = %d\n", i+1);
 
-        size_t eigenVectorPitch;
+        size_t eigenVectorPitch = 0;
         CUDA_SAFE_CALL(cudaMemset(devEigVectors, 0, p_nMatrixDimension * sizeof(float)*p_nEigNum));
         //CUDA_SAFE_CALL(cudaMallocPitch((void**)&devEigVectors, &eigenVectorPitch, p_nMatrixDimension * sizeof(float), p_nEigNum));
         //CUDA_SAFE_CALL(cudaMemset(devEigVectors, 0, eigenVectorPitch*p_nEigNum));
@@ -1079,7 +1076,6 @@ void NormalizeEigVecs(int p_nMatrixDimension, float* p_aaEigVecs, int p_nEigNum)
 void generalizedEigensolve(Stencil& myStencil, float* devMatrix, int matrixPitchInFloats, int getNEigs, float** p_eigenvalues, float** devEigVectors, float fTolerance) {
   int width = myStencil.getWidth();
   int height = myStencil.getHeight();
-  int radius = myStencil.getRadius();
   int nDimension = myStencil.getStencilArea();
   //int getNEigs = 9;
   //int getNEigs = 17;

@@ -1,6 +1,5 @@
 // vim: ts=4 syntax=cpp comments=
 
-#include <cutil.h>
 #include <cuda.h>
 #include <fstream>
 #include <math.h>
@@ -8,7 +7,8 @@
 #include <stdlib.h>
 #include <sys/time.h>
 #include <time.h>
-#include "nonmax.h"
+#include <damascene/nonmax.h>
+#include <damascene/util.h>
 
 #define M_PIl           3.1415926535897932384626433832795029L  /* pi */
 #define M_PI_2l         1.5707963267948966192313216916397514L  /* pi/2 */

@@ -4,3 +4,4 @@ siteconf.py
 .sconsign.dblite
 config.log
 *.pyc
+build

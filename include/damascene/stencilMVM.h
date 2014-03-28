@@ -1,13 +1,12 @@
 #include <cuda.h>
-#include <cutil.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
 #include <getopt.h>
 #include <vector>
 
-#include "Stencil.h"
-
+#include <damascene/Stencil.h>
+#include <damascene/util.h>
 #define IMUL(a, b) __mul24(a, b)
 #define XBLOCK 64
 #define YBLOCK 1

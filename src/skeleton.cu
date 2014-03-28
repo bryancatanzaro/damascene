@@ -1,4 +1,4 @@
-#include "skeleton.h"
+#include <damascene/skeleton.h>
 #define IMUL(a, b) __mul24(a, b)
 
 texture<float, 2, cudaReadModeElementType> image;

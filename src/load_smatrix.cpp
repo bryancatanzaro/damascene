@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <assert.h>
 
-#include "Stencil.h"
+#include <damascene/Stencil.h>
 
 void readCircleStencilMatrix(char* filename, Stencil theStencil, float** p_array) { 
   int nDimension = theStencil.getStencilArea();
@@ -21,12 +21,12 @@ void readCircleStencilMatrix(char* filename, Stencil theStencil, float** p_array
   *p_array = array;
 
   int n = 0;
-  fread(&n,sizeof(int),1,fp);
+  size_t b = fread(&n,sizeof(int),1,fp);
 
   assert(n == (width * height)); 
 
   int nnz = 0;
-  fread(&nnz,sizeof(int),1,fp);
+  b = fread(&nnz,sizeof(int),1,fp);
   assert(nnz < nDimension * width * height);
 
   int* x = new int[nDimension]; //col indices;
@@ -34,17 +34,18 @@ void readCircleStencilMatrix(char* filename, Stencil theStencil, float** p_array
                          
   int nz = 0;
   for (int row = 0; row < n; row++) {
-    fread(&nz,sizeof(int),1,fp); //number of entries in this row
+    b = fread(&nz,sizeof(int),1,fp); //number of entries in this row
     assert(nz < nDimension);
     
-    fread(z,sizeof(double),nz,fp); //value
-    fread(x,sizeof(int),nz,fp);    //col index
+    b = fread(z,sizeof(double),nz,fp); //value
+    b = fread(x,sizeof(int),nz,fp);    //col index
     
     for (int col = 0; col < nz; col++) {
-      int index = matrixIndex(row, x[col]);
+      int index = theStencil.matrixIndex(row, x[col]);
       array[index] = (float)z[col];
     } 
   }
+  assert(b != 0);
   fclose(fp);
   
   delete[] x;

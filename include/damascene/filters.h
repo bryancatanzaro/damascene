@@ -3,10 +3,10 @@ void gaussian_2D(
    double        sigma_x, 
    double        sigma_y,
    double        ori,
-   unsigned int  deriv,
+   int  deriv,
    bool          hlbrt,
-   unsigned long support_x,
-   unsigned long support_y);
+   long support_x,
+   long support_y);
 
 void gaussian_cs_2D(
    float* filter,

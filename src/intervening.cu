@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cuda.h>
-#include <cutil.h>
 #include <assert.h>
-#include "Stencil.h"
+#include <damascene/Stencil.h>
+#include <damascene/util.h>
+
 
 #define XBLOCK 16
 #define YBLOCK 16
@@ -252,12 +253,6 @@ ic_walk (const int x0, const int y0,
       maxpb = fmax(maxpb,intersected);
       oldx = xi;
       oldy = yi;
-/*       if ((x0 == 49) && (y0 == 19) && (x2 == 54) && (y2 == 16)) { */
-/*         int entry = xi - x0 - 1; */
-/*         scratch[3*entry] = xi; */
-/*         scratch[3*entry+1] = yi; */
-/*         scratch[3*entry+2] = maxpb; */
-/*       } */
       // if the approximation is not good, then skip this point
       if (!good) { continue; }
 

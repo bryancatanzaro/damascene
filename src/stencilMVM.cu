@@ -8,8 +8,8 @@
 #include <vector>
 #include <algorithm>
 
-#include "Stencil.h"
-#include "stencilMVM.h"
+#include <damascene/Stencil.h>
+#include <damascene/stencilMVM.h>
 
 __constant__ int constOffsets[STENCILAREAMAX];
 

@@ -1,7 +1,6 @@
 #include <cuda.h>
-#include <cutil.h>
 #include <stdio.h>
-
+#include <damascene/util.h>
 #define NUM_LUTS 8
 
 

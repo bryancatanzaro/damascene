@@ -1,10 +1,12 @@
-#include "ppm_util.h"
+#include <damascene/ppm_util.h>
 
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
 #include <cstring>
 #include <cassert>
+#include <algorithm>
+#include <fstream>
 
 //! size of PGM file header 
 const unsigned int PGMHeaderSize = 0x40;
@@ -98,4 +100,50 @@ bool loadPPM4ub(const char* file, unsigned char** data,
         free(idata);
         return false;
     }
+}
+
+struct ConverterToUByte {
+    unsigned char operator()(const float& val) {
+        return static_cast<unsigned char>(val * 255.0f);
+    }
+};
+
+bool savePGMf(const char* file, float* data,
+              unsigned int w, unsigned int h) {
+    unsigned int size = w * h;
+    unsigned char* idata = 
+        (unsigned char*) malloc( sizeof(unsigned char) * size);
+    int channels = 1;
+    std::transform( data, data + size, idata, ConverterToUByte());
+
+    assert( NULL != data);
+    assert( w > 0);
+    assert( h > 0);
+
+    std::fstream fh( file, std::fstream::out | std::fstream::binary );
+    if( fh.bad()) 
+    {
+        std::cerr << "savePPM() : Opening file failed." << std::endl;
+        return false;
+    }
+    fh << "P5\n";
+    fh << w << "\n" << h << "\n" << 0xff << std::endl;
+
+    for( unsigned int i = 0; (i < (w*h*channels)) && fh.good(); ++i) 
+    {
+        fh << data[i];
+    }
+    fh.flush();
+
+    if( fh.bad()) 
+    {
+        std::cerr << "savePPM() : Writing data failed." << std::endl;
+        return false;
+    } 
+    fh.close();
+
+    // cleanup
+    free( idata);
+
+    return true;
 }

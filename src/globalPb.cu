@@ -1,6 +1,6 @@
 // vim: ts=4 syntax=cpp comments=
 
-#include "globalPb.h"
+#include <damascene/globalPb.h>
 #define XSIZE 256
 __global__ void CalcGPb(int p_nPixels, int p_nMatrixPitch, int p_nOrient, 
                         float* devcombinedg, float* devspb, float* devmpb, float* devGpball,

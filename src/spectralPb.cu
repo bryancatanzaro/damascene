@@ -3,13 +3,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <cutil.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/time.h>
-#include "convert.h"
-
-#include "filters.h"
+#include <damascene/convert.h>
+#include <damascene/filters.h>
+#include <damascene/util.h>
 
 //Fast integer multiplication macro
 #define IMUL(a, b) __mul24(a, b)
@@ -677,7 +676,7 @@ void spectralPb(float *eigenvalues, float *devEigVec, int xdim, int ydim, int nv
 	float *h_Kernels;
 	cudaArray *a_Data;
 	float *d_Result;
-	int fd,val;
+	//int fd,val;
 	
 	// read in convolution kernels
 	
@@ -707,7 +706,7 @@ void spectralPb(float *eigenvalues, float *devEigVec, int xdim, int ydim, int nv
          
         for(int ori=NUM_ORIENT-1;ori>=0;ori--)
         {
-            gaussian_2D(h_Kernels+(NUM_ORIENT-1-ori)*KERNEL_SIZE, 1, 1, M_PI/2+ori*M_PI/NUM_ORIENT, 1, false, 3, 3 );
+            gaussian_2D(h_Kernels+(NUM_ORIENT-1-ori)*KERNEL_SIZE, 1.0, 1.0, M_PI/2+ori*M_PI/NUM_ORIENT, 1, false, 3, 3);
 //            for(int i=0;i<KERNEL_SIZE;i++)
 //            {
 //                printf("%f ",h_Kernels[i+(NUM_ORIENT-1-ori)*KERNEL_SIZE]);
@@ -757,7 +756,7 @@ void spectralPb(float *eigenvalues, float *devEigVec, int xdim, int ydim, int nv
 				
         CUDA_SAFE_CALL( cudaThreadSynchronize() );
 		  spectralPb_kernel<<<blockGrid, threadBlock>>>(d_Result, xdim_mirrored, ydim_mirrored, 1/sqrt(eigenvalues[i]));
-        CUT_CHECK_ERROR("spectralPb_kernel execution failed\n");
+        CHECK_ERROR("spectralPb_kernel execution failed\n");
         CUDA_SAFE_CALL( cudaThreadSynchronize() );
 	}
 	

@@ -3,8 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cuda.h>
-#include "util.h"
-#include "ppm_util.h"
+#include <damascene/util.h>
+#include <damascene/ppm_util.h>
 
 #define XBLOCK 16
 #define YBLOCK 16

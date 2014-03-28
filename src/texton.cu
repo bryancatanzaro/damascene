@@ -1,8 +1,8 @@
 #include <cuda.h>
-#include "filters.h"
-#include "kmeans.h"
-#include <cutil.h>
-#include <stdio.h>
+#include <damascene/filters.h>
+#include <damascene/kmeans.h>
+#include <cstdio>
+#include <damascene/util.h>
 
 #define TEXTON64 2
 #define TEXTON32 1

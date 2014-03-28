@@ -84,7 +84,12 @@ if not conf.CheckHeader('acml.h'):
     print("ACML header not found. Update siteconf.py with path")
 
 env.Append(CCFLAGS = ['-O3'])
-    
+cwd = os.getcwd()
+env.Append(CPPPATH = [os.path.join(cwd, 'include')])    
+
+env.Append(LIBS = ['cudart', 'cuda', 'cublas'])
+
+
 Export('env')
 
 damascene = SConscript(os.path.join('src', 'SConscript'),

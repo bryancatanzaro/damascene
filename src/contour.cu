@@ -3,22 +3,23 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <cuda.h>
-#include <cutil.h>
 #include <fcntl.h>
 #include <float.h>
 #include <unistd.h>
-#include "texton.h"
-#include "convert.h"
-#include "intervening.h"
-#include "lanczos.h"
-#include "stencilMVM.h"
+#include <damascene/texton.h>
+#include <damascene/convert.h>
+#include <damascene/intervening.h>
+#include <damascene/lanczos.h>
+#include <damascene/stencilMVM.h>
 
-#include "localcues.h"
-#include "combine.h"
-#include "nonmax.h"
-#include "spectralPb.h"
-#include "globalPb.h"
-#include "skeleton.h"
+#include <damascene/localcues.h>
+#include <damascene/combine.h>
+#include <damascene/nonmax.h>
+#include <damascene/spectralPb.h>
+#include <damascene/globalPb.h>
+#include <damascene/skeleton.h>
+#include <damascene/util.h>
+#include <damascene/ppm_util.h>
 
 #define __TIMER_SPECFIC
 
@@ -29,20 +30,21 @@ float* loadArray(char* filename, uint& width, uint& height) {
   FILE* fp;
   fp = fopen(filename, "r");
   int dim;
-  fread(&dim, sizeof(int), 1, fp);
+  size_t b = fread(&dim, sizeof(int), 1, fp);
   assert(dim == 2);
-  fread(&width, sizeof(int), 1, fp);
-  fread(&height, sizeof(int), 1, fp);
+  b = fread(&width, sizeof(int), 1, fp);
+  b = fread(&height, sizeof(int), 1, fp);
   float* buffer = (float*)malloc(sizeof(float) * width * height);
   int counter = 0;
-  for(int col = 0; col < width; col++) {
-    for(int row = 0; row < height; row++) {
+  for(uint col = 0; col < width; col++) {
+    for(uint row = 0; row < height; row++) {
       float element;
-      fread(&element, sizeof(float), 1, fp);
+      b = fread(&element, sizeof(float), 1, fp);
       counter++;
       buffer[row * width + col] = element;
     }
   }
+  assert(b != 0);
  /*  for(int row = 0; row < height; row++) { */
 /*     for(int col = 0; col < width; col++) { */
 /*       printf("%f ", buffer[row*width + col]); */
@@ -54,8 +56,8 @@ float* loadArray(char* filename, uint& width, uint& height) {
 
 void writeTextImage(const char* filename, uint width, uint height, float* image) {
   FILE* fp = fopen(filename, "w");
-  for(int row = 0; row < height; row++) {
-    for(int col = 0; col < width; col++) {
+  for(uint row = 0; row < height; row++) {
+    for(uint col = 0; col < width; col++) {
       fprintf(fp, "%f ", image[row * width + col]);
     }
     fprintf(fp, "\n");
@@ -71,9 +73,10 @@ void writeFile(char* file, int width, int height, int* input)
       pb[i] = (float)input[i];
     }
     fd = open(file, O_CREAT|O_WRONLY, 0666);
-    write(fd, &width, sizeof(int));
-    write(fd, &height, sizeof(int));
-    write(fd, pb, width*height*sizeof(float));
+    size_t b = write(fd, &width, sizeof(int));
+    b = write(fd, &height, sizeof(int));
+    b = write(fd, pb, width*height*sizeof(float));
+    assert(b != 0);
     close(fd);
 }
 
@@ -82,9 +85,10 @@ void writeFile(char* file, int width, int height, float* pb)
     int fd;
 
     fd = open(file, O_CREAT|O_WRONLY, 0666);
-    write(fd, &width, sizeof(int));
-    write(fd, &height, sizeof(int));
-    write(fd, pb, width*height*sizeof(float));
+    size_t b = write(fd, &width, sizeof(int));
+    b = write(fd, &height, sizeof(int));
+    b = write(fd, pb, width*height*sizeof(float));
+    assert(b != 0);
     close(fd);
 }
 
@@ -93,16 +97,17 @@ void writeGradients(char* file, int width, int height, int pitchInFloats, int no
     int fd;
 
     fd = open(file, O_CREAT|O_WRONLY, 0666);
-    write(fd, &width, sizeof(int));
-    write(fd, &height, sizeof(int));
-    write(fd, &norients, sizeof(int));
-    write(fd, &scales, sizeof(int));
+    size_t b = write(fd, &width, sizeof(int));
+    b = write(fd, &height, sizeof(int));
+    b = write(fd, &norients, sizeof(int));
+    b = write(fd, &scales, sizeof(int));
     for(int scale = 0; scale < scales; scale++) {
       for(int orient = 0; orient < norients; orient++) {
         float* currentPointer = &pb[pitchInFloats * orient + pitchInFloats * scale * norients];
-        write(fd, currentPointer, width*height*sizeof(float));
+        b = write(fd, currentPointer, width*height*sizeof(float));
       }
     }
+    assert(b != 0);
     close(fd);
 }
 
@@ -113,9 +118,10 @@ void writeArray(char* file, int ndim, int* dim, float* input) {
   for(int i = 0; i < ndim; i++) {
     size *= dim[i];
   }
-  write(fd, &ndim, sizeof(int));
-  write(fd, dim, sizeof(int) * ndim);
-  write(fd, input, sizeof(float) * size);
+  size_t b = write(fd, &ndim, sizeof(int));
+  b = write(fd, dim, sizeof(int) * ndim);
+  b = write(fd, input, sizeof(float) * size);
+  assert(b != 0);
   close(fd);
 }
 
@@ -249,31 +255,25 @@ int main(int argc, char** argv) {
   printf("Image found: %i x %i pixels\n", width, height);
   assert(width > 0);
   assert(height > 0);
-  uint timer;
-#ifdef __TIMER_SPECFIC
-  uint timer_specific;
-#endif
 
-  unsigned int totalMemory, availableMemory;
+  size_t totalMemory, availableMemory;
   cuMemGetInfo(&availableMemory,&totalMemory );
-  printf("Available %u bytes on GPU\n", availableMemory);
+  printf("Available %zu bytes on GPU\n", availableMemory);
 
-  cutCreateTimer(&timer);
-  cutStartTimer(timer);
- 
+  cuda_timer timer;
+  timer.start();
 #ifdef __TIMER_SPECFIC
-  cutCreateTimer(&timer_specific);
-  cutStartTimer(timer_specific);
+  cuda_timer timer_specific;
+  timer_specific.start();
 #endif
 
   float* devGreyscale;
   rgbUtoGreyF(width, height, devRgbU, &devGreyscale);
-
+  float time = 0;
 #ifdef __TIMER_SPECFIC
-  cutStopTimer(timer_specific);
-  printf(">+< rgbUtoGrayF | %f | ms\n", cutGetTimerValue(timer_specific));
-  cutResetTimer(timer_specific);
-  cutStartTimer(timer_specific);
+  time = timer_specific.stop();
+  printf(">+< rgbUtoGrayF | %f | ms\n", time);
+  timer_specific.start();
 #endif
 
 //   float* hostG = (float*)malloc(sizeof(float) * nPixels); 
@@ -297,10 +297,9 @@ int main(int argc, char** argv) {
 /*   cudaMalloc((void**)&devTextons, sizeof(int) * width * height); */
 /*   cudaMemcpy(devTextons, hostTextons, sizeof(int) * width * height, cudaMemcpyHostToDevice); */
 #ifdef __TIMER_SPECFIC
-  cutStopTimer(timer_specific);
-  printf(">+< texton | %f | ms\n", cutGetTimerValue(timer_specific));
-  cutResetTimer(timer_specific);
-  cutStartTimer(timer_specific);
+  time = timer_specific.stop();
+  printf(">+< texton | %f | ms\n", time);
+  timer_specific.start();
 #endif
 
   float* devL;
@@ -309,21 +308,17 @@ int main(int argc, char** argv) {
   rgbUtoLab3F(width, height, 2.5, devRgbU, &devL, &devA, &devB);
 
 #ifdef __TIMER_SPECFIC
-  cutStopTimer(timer_specific);
-  printf(">+< rgbUtoLab3F | %f | ms\n", cutGetTimerValue(timer_specific));
-  cutResetTimer(timer_specific);
-  cutStartTimer(timer_specific);
+  time = timer_specific.stop();
+  printf(">+< rgbUtoLab3F | %f | ms\n", time);
+  timer_specific.start();
 #endif
   normalizeLab(width, height, devL, devA, devB);
 #ifdef __TIMER_SPECFIC
-  cutStopTimer(timer_specific);
-  printf(">+< normalizeLab | %f | ms\n", cutGetTimerValue(timer_specific));
-  cutResetTimer(timer_specific);
-  cutStartTimer(timer_specific);
+  time = timer_specific.stop();
+  printf(">+< normalizeLab | %f | ms\n", time);
+  timer_specific.start();
 #endif
   int border = 30;
-  int borderWidth = width + 2 * border;
-  int borderHeight = height + 2 * border;
   float* devLMirrored;
   mirrorImage(width, height, border, devL, &devLMirrored);
 /*   float* hostLMirrored = (float*)malloc(borderWidth * borderHeight * sizeof(float)); */
@@ -334,31 +329,27 @@ int main(int argc, char** argv) {
   cudaFree(devRgbU);
   cudaFree(devGreyscale);
 #ifdef __TIMER_SPECFIC
-  cutStopTimer(timer_specific);
-  printf(">+< mirrorImage | %f | ms\n", cutGetTimerValue(timer_specific));
-  cutResetTimer(timer_specific);
-  cutStartTimer(timer_specific);
+  time = timer_specific.stop();
+  printf(">+< mirrorImage | %f | ms\n", time);
+  timer_specific.start();
 #endif
   float* devBg;
   float* devCga;
   float* devCgb;
   float* devTg;
   int matrixPitchInFloats;
- 
- uint localcuestimer; 
- cutCreateTimer(&localcuestimer);
- cutStartTimer(localcuestimer);
+  cuda_timer local_cues_timer;
+  local_cues_timer.start();
 
   localCues(width, height, devL, devA, devB, devTextons, &devBg, &devCga, &devCgb, &devTg, &matrixPitchInFloats, nTextonChoice);
 
-  cutStopTimer(localcuestimer);
-  printf("localcues time: %f seconds\n", cutGetTimerValue(localcuestimer)/1000.0);
+  time = local_cues_timer.stop();
+  printf("localcues time: %f seconds\n", time/1000.0);
 
 #ifdef __TIMER_SPECFIC
-  cutStopTimer(timer_specific);
-  printf(">+< localcues | %f | ms\n", cutGetTimerValue(timer_specific));
-  cutResetTimer(timer_specific);
-  cutStartTimer(timer_specific);
+  time = timer_specific.stop();
+  printf(">+< localcues | %f | ms\n", time);
+  timer_specific.start();
 #endif
    //float* hostG = (float*)malloc(sizeof(float) * nPixels); 
    //CUDA_SAFE_CALL(cudaMemcpy(hostG, devBg, height*width*sizeof(float),cudaMemcpyDeviceToHost));
@@ -388,10 +379,9 @@ int main(int argc, char** argv) {
   combine(width, height, matrixPitchInFloats, devBg, devCga, devCgb, devTg, &devMPbO, &devCombinedGradient, nTextonChoice);
 
 #ifdef __TIMER_SPECFIC
-  cutStopTimer(timer_specific);
-  printf(">+< combine | %f | ms\n", cutGetTimerValue(timer_specific));
-  cutResetTimer(timer_specific);
-  cutStartTimer(timer_specific);
+  time = timer_specific.stop();
+  printf(">+< combine | %f | ms\n", time);
+  timer_specific.start();
 #endif
 
   CUDA_SAFE_CALL(cudaFree(devBg));
@@ -404,10 +394,9 @@ int main(int argc, char** argv) {
   nonMaxSuppression(width, height, devMPbO, matrixPitchInFloats, devMPb);
 
 #ifdef __TIMER_SPECFIC
-  cutStopTimer(timer_specific);
-  printf(">+< nonmaxsupression | %f | ms\n", cutGetTimerValue(timer_specific));
-  cutResetTimer(timer_specific);
-  cutStartTimer(timer_specific);
+  time = timer_specific.stop();
+  printf(">+< nonmaxsuppression | %f | ms\n", time);
+  timer_specific.start();
 #endif
   
   //int devMatrixPitch = matrixPitchInFloats * sizeof(float);
@@ -415,16 +404,14 @@ int main(int argc, char** argv) {
   //int radius = 10;
 
   Stencil theStencil(radius, width, height, matrixPitchInFloats);
-  int nDimension = theStencil.getStencilArea();
   float* devMatrix;
   intervene(theStencil, devMPb, &devMatrix);
   printf("Intervening contour completed\n");
  
 #ifdef __TIMER_SPECFIC
-  cutStopTimer(timer_specific);
-  printf(">+< intervene | %f | ms\n", cutGetTimerValue(timer_specific));
-  cutResetTimer(timer_specific);
-  cutStartTimer(timer_specific);
+  time = timer_specific.stop();
+  printf(">+< intervene | %f | ms\n", time);
+  timer_specific.start();
 #endif
 
   float* eigenvalues;
@@ -433,10 +420,9 @@ int main(int argc, char** argv) {
   generalizedEigensolve(theStencil, devMatrix, matrixPitchInFloats, nEigNum, &eigenvalues, &devEigenvectors, fEigTolerance);
 
 #ifdef __TIMER_SPECFIC
-  cutStopTimer(timer_specific);
-  printf(">+< generalizedEigensolve | %f | ms\n", cutGetTimerValue(timer_specific));
-  cutResetTimer(timer_specific);
-  cutStartTimer(timer_specific);
+  time = timer_specific.stop();
+  printf(">+< generalizedEigensolve | %f | ms\n", time);
+  timer_specific.start();
 #endif
   float* devSPb = 0;
   size_t devSPb_pitch = 0;
@@ -446,10 +432,9 @@ int main(int argc, char** argv) {
   spectralPb(eigenvalues, devEigenvectors, width, height, nEigNum, devSPb, matrixPitchInFloats);
 
 #ifdef __TIMER_SPECFIC
-  cutStopTimer(timer_specific);
-  printf(">+< spectralPb | %f | ms\n", cutGetTimerValue(timer_specific));
-  cutResetTimer(timer_specific);
-  cutStartTimer(timer_specific);
+  time = timer_specific.stop();
+  printf(">+< spectralPb | %f | ms\n", time);
+  timer_specific.start();
 #endif
   float* devGPb = 0;
   CUDA_SAFE_CALL(cudaMalloc((void**)&devGPb, sizeof(float) * nPixels));
@@ -459,10 +444,9 @@ int main(int argc, char** argv) {
   StartCalcGPb(nPixels, matrixPitchInFloats, 8, devCombinedGradient, devSPb, devMPb, devGPball, devGPb);
  
 #ifdef __TIMER_SPECFIC
-  cutStopTimer(timer_specific);
-  printf(">+< StartCalcGpb | %f | ms\n", cutGetTimerValue(timer_specific));
-  cutResetTimer(timer_specific);
-  cutStartTimer(timer_specific);
+  time = timer_specific.stop();
+  printf(">+< StartCalcGpb | %f | ms\n", time);
+  timer_specific.start();
 #endif
   float* devGPb_thin = 0;
   CUDA_SAFE_CALL(cudaMalloc((void**)&devGPb_thin, nPixels * sizeof(float) ));
@@ -470,26 +454,26 @@ int main(int argc, char** argv) {
   NormalizeGpbAll(nPixels, 8, matrixPitchInFloats, devGPball);
   
   cudaThreadSynchronize();
-  cutStopTimer(timer);
+  float all_time = timer.stop();
   printf("CUDA Status : %s\n", cudaGetErrorString(cudaGetLastError()));
 
 #ifdef __TIMER_SPECFIC
-  cutStopTimer(timer_specific);
-  printf(">+< PostProcess | %f | ms\n", cutGetTimerValue(timer_specific));
+  time = timer_specific.stop();
+  printf(">+< PostProcess | %f | ms\n", time);
 #endif
-  printf(">+< Computation time: | %f | seconds\n", cutGetTimerValue(timer)/1000.0);
+  printf(">+< Computation time: | %f | seconds\n", all_time/1000.0);
   float* hostGPb = (float*)malloc(sizeof(float)*nPixels);
   memset(hostGPb, 0, sizeof(float) * nPixels);
   cudaMemcpy(hostGPb, devGPb, sizeof(float)*nPixels, cudaMemcpyDeviceToHost);
   
-  cutSavePGMf(outputPGMfilename, hostGPb, width, height);
+  savePGMf(outputPGMfilename, hostGPb, width, height);
   writeFile(outputPBfilename, width, height, hostGPb);
 
   /* thin image */
   float* hostGPb_thin = (float*)malloc(sizeof(float)*nPixels);
   memset(hostGPb_thin, 0, sizeof(float) * nPixels);
   cudaMemcpy(hostGPb_thin, devGPb_thin, sizeof(float)*nPixels, cudaMemcpyDeviceToHost);
-  cutSavePGMf(outputthinPGMfilename, hostGPb_thin, width, height);
+  savePGMf(outputthinPGMfilename, hostGPb_thin, width, height);
   writeFile(outputthinPBfilename, width, height, hostGPb);
   free(hostGPb_thin);
   /* end thin image */

@@ -1,0 +1,17 @@
+Import('env')
+
+
+
+src_files = ['ppm_util.cpp', 'combine.cu', 'convert.cu', 'skeleton.cu',
+             'filters.cpp', 'intervening.cu', 'stencilMVM.cu',
+             'Stencil.cpp', 'gradient.cu', 'localcues.cu',
+             'texton.cu', 'spectralPb.cu', 'kmeans.cu',
+             'nonmax.cu', 'load_smatrix.cpp', 'lanczos.cu',
+             'parabola.cu', 'rotate.cu', 'globalPb.cu']
+objects = [env.Object(x) for x in src_files]
+
+library = env.Library('damascene', objects)
+
+contour = env.Program(['contour.cu', library])
+
+Return('contour')
