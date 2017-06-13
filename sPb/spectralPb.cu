@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <cutil.h>
+#include <helper_cuda.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/time.h>
@@ -665,7 +665,7 @@ void PrintArray(int size, float* devArray)
 {
 	float* temp = (float*)malloc(sizeof(float)*size);
 
-	CUDA_SAFE_CALL( cudaMemcpy(resu, devArray, xdim*ydim, cudaMemcpyDeviceToDevice) );
+	checkCudaErrors( cudaMemcpy(resu, devArray, xdim*ydim, cudaMemcpyDeviceToDevice) );
 
 }
 */
@@ -734,18 +734,18 @@ void spectralPb(float *eigenvalues, float *devEigVec, int xdim, int ydim, int nv
 		
 	// set up texture memory
 	cudaChannelFormatDesc floatTex = cudaCreateChannelDesc<float>();
-	CUDA_SAFE_CALL( cudaMallocArray(&a_Data, &floatTex, xdim_mirrored, ydim_mirrored) );
-	CUDA_SAFE_CALL( cudaBindTextureToArray(texData, a_Data) );		
+	checkCudaErrors( cudaMallocArray(&a_Data, &floatTex, xdim_mirrored, ydim_mirrored) );
+	checkCudaErrors( cudaBindTextureToArray(texData, a_Data) );		
 	
 	//ts1 = timestamp();	
 	
 	// allocate space for result
-	CUDA_SAFE_CALL( cudaMalloc((void **)&d_Result, imagesize_mirrored*NUM_ORIENT) );
-	CUDA_SAFE_CALL( cudaMemset( d_Result, 0, imagesize_mirrored*NUM_ORIENT) );
+	checkCudaErrors( cudaMalloc((void **)&d_Result, imagesize_mirrored*NUM_ORIENT) );
+	checkCudaErrors( cudaMemset( d_Result, 0, imagesize_mirrored*NUM_ORIENT) );
 	//h_Result = (float *) malloc(imagesize_mirrored*NUM_ORIENT);	
 	
 	// copy kernels to constant memory space
-	CUDA_SAFE_CALL( cudaMemcpyToSymbol(d_Kernels, h_Kernels, KERNEL_SIZE*NUM_ORIENT*sizeof(float)) );	
+	checkCudaErrors( cudaMemcpyToSymbol(d_Kernels, h_Kernels, KERNEL_SIZE*NUM_ORIENT*sizeof(float)) );	
 
 	dim3 threadBlock(16, 12);
   dim3 blockGrid(iDivUp(xdim_mirrored, threadBlock.x), iDivUp(ydim_mirrored, threadBlock.y));
@@ -753,12 +753,12 @@ void spectralPb(float *eigenvalues, float *devEigVec, int xdim, int ydim, int nv
    for (int i=1;i<nvec;i++) {
 		eigenvector = devEigVecMirror + (i-1)*(imagesize_mirrored/sizeof(float));
 		// copy image to texture memory
-		CUDA_SAFE_CALL( cudaMemcpyToArray(a_Data, 0, 0, eigenvector, imagesize_mirrored, cudaMemcpyDeviceToDevice) );
+		checkCudaErrors( cudaMemcpyToArray(a_Data, 0, 0, eigenvector, imagesize_mirrored, cudaMemcpyDeviceToDevice) );
 				
-        CUDA_SAFE_CALL( cudaThreadSynchronize() );
+        checkCudaErrors( cudaThreadSynchronize() );
 		  spectralPb_kernel<<<blockGrid, threadBlock>>>(d_Result, xdim_mirrored, ydim_mirrored, 1/sqrt(eigenvalues[i]));
-        CUT_CHECK_ERROR("spectralPb_kernel execution failed\n");
-        CUDA_SAFE_CALL( cudaThreadSynchronize() );
+        getLastCudaError("spectralPb_kernel execution failed\n");
+        checkCudaErrors( cudaThreadSynchronize() );
 	}
 	
 	
@@ -768,7 +768,7 @@ void spectralPb(float *eigenvalues, float *devEigVec, int xdim, int ydim, int nv
 	}
 	
 /*
-	CUDA_SAFE_CALL( cudaMemcpy(h_Result, d_Result, imagesize_mirrored*NUM_ORIENT, cudaMemcpyDeviceToHost) );
+	checkCudaErrors( cudaMemcpy(h_Result, d_Result, imagesize_mirrored*NUM_ORIENT, cudaMemcpyDeviceToHost) );
    for(int i=0;i<NUM_ORIENT;i++) {
 	   int y;
 	   float *result;
@@ -788,9 +788,9 @@ void spectralPb(float *eigenvalues, float *devEigVec, int xdim, int ydim, int nv
 	
 	//printf("spectralPb time = %fms\n", ((double)ts2-(double)ts1)/1000);
    
-   CUDA_SAFE_CALL( cudaUnbindTexture(texData) );
-   CUDA_SAFE_CALL( cudaFree(d_Result)   );
-   CUDA_SAFE_CALL( cudaFreeArray(a_Data)   );
+   checkCudaErrors( cudaUnbindTexture(texData) );
+   checkCudaErrors( cudaFree(d_Result)   );
+   checkCudaErrors( cudaFreeArray(a_Data)   );
    free(h_Kernels);
 }  
 
