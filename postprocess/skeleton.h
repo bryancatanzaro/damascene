@@ -1,5 +1,5 @@
 #include <cuda.h>
-#include <cutil.h>
+#include <helper_cuda.h>
 #include <stdio.h>
 
 #define NUM_LUTS 8
