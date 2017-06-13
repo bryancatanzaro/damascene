@@ -3,7 +3,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cuda.h>
-#include <cutil.h>
+#include <helper_cuda.h>
+#include <helper_image.h>
+#include "Stencil.h"
 
 #define XBLOCK 16
 #define YBLOCK 16
@@ -87,7 +89,7 @@ __global__ void normalizeLab_kernel(uint width, uint height, float* devL, float*
 
 void loadPPM_rgbU(char* filename, uint* p_width, uint* p_height, uint** p_devRgbU) {
   unsigned int* data;
-  cutLoadPPM4ub(filename, (unsigned char**)&data, p_width, p_height);
+  sdkLoadPPM4ub(filename, (unsigned char**)&data, p_width, p_height);
   //cutLoadPPMub(filename, (unsigned char**)&data, p_width, p_height);
   uint imageSize = sizeof(uint) * (*p_width) * (*p_height);
   cudaMalloc((void**)p_devRgbU, imageSize);
@@ -108,7 +110,7 @@ void rgbUtoGreyF(uint width, uint height, uint* devRgbU, float** p_devGrey) {
   dim3 gridDim = dim3((width - 1)/XBLOCK + 1, (height - 1)/YBLOCK + 1);
   dim3 blockDim = dim3(XBLOCK, YBLOCK);
   uint imageSize = sizeof(float) * width * height;
-  CUDA_SAFE_CALL(cudaMalloc((void**)p_devGrey, imageSize));
+  checkCudaErrors(cudaMalloc((void**)p_devGrey, imageSize));
   rgbUtoGreyF_kernel<<<gridDim, blockDim>>>(width, height, devRgbU, *p_devGrey);
 }
 

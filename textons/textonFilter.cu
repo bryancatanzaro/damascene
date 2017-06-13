@@ -1,5 +1,7 @@
 #include <cuda.h>
-#include <cutil.h>
+#include <helper_cuda.h>
+#include <helper_image.h>
+#include <helper_timer.h>
 #include <stdio.h>
 #include <cublas.h>
 #include "texton.h"
@@ -37,16 +39,16 @@ int main(int argc, char** argv) {
   float* hostImage = 0;
   unsigned int width;
   unsigned int height;
-  cutLoadPGMf(filename, &hostImage, &width, &height);
+  sdkLoadPGM(filename, &hostImage, &width, &height);
   int nPixels = width * height;
   printf("width = %i, height = %i\n", width, height);
   float* devImage;
   cudaMalloc((void**)&devImage, sizeof(float) * nPixels);
   cudaMemcpy(devImage, hostImage, sizeof(float) * nPixels, cudaMemcpyHostToDevice);
   int* devClusters;
-  unsigned int textonTimer;
-  cutCreateTimer(&textonTimer);
-  cutStartTimer(textonTimer);
+  StopWatchInterface *textonTimer=NULL;
+  sdkCreateTimer(&textonTimer);
+  sdkStartTimer(&textonTimer);
 
   findTextons(width, height, devImage, &devClusters, 1);
   
@@ -162,13 +164,14 @@ int main(int argc, char** argv) {
 /*     } */
 /*   } */
 /*   printf("%i iterations until convergence\n", i); */
-  cutStopTimer(textonTimer);
-  printf("Texton time: %f\n", cutGetTimerValue(textonTimer));
+  sdkStopTimer(&textonTimer);
+  printf("Texton time: %f\n", sdkGetTimerValue(&textonTimer));
+  sdkDeleteTimer(&textonTimer);
   cudaMemcpy(hostClusters, devClusters, sizeof(int) * nPixels, cudaMemcpyDeviceToHost);
   for(int i = 0; i < nPixels; i++) {
     hostClustersUb[i] = (unsigned char)hostClusters[i] * 4;
   }
-  cutSavePGMub("newClusters.pgm", hostClustersUb, width, height);
+  sdkSavePGM("newClusters.pgm", hostClustersUb, width, height);
   /* float* sgemmResult; */
 /*   cudaMalloc((void**)&sgemmResult, sizeof(float) * nPixels * clusterCount); */
 /*   cublasSgemm('n', 't', nPixels, filterCount, clusterCount, 1.0f, devResponses, nPixels, centroids, clusterCount, 0.0f, sgemmResult, nPixels); */

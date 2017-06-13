@@ -2,7 +2,7 @@
 
 #include "spectralPb.h"
 #include <stdio.h>
-#include <cutil.h>
+#include <helper_cuda.h>
 #include <cuda.h>
 
 void chooseLargestGPU(bool verbose) {
@@ -52,17 +52,17 @@ int main(int argc, char** argv)
 	fclose(fvector);
 
 	float* devEigVec = 0;
-	CUDA_SAFE_CALL(cudaMalloc((void**)&devEigVec, width*height*nvec*sizeof(float)));
-	CUDA_SAFE_CALL(cudaMemcpy(devEigVec, eigvector, width*height*nvec*sizeof(float), cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMalloc((void**)&devEigVec, width*height*nvec*sizeof(float)));
+	checkCudaErrors(cudaMemcpy(devEigVec, eigvector, width*height*nvec*sizeof(float), cudaMemcpyHostToDevice));
 
 	float* devResult = 0;
 	size_t pitch = 0;
-	CUDA_SAFE_CALL(cudaMallocPitch((void**)&devResult, &pitch, size *  sizeof(float), 8));
+	checkCudaErrors(cudaMallocPitch((void**)&devResult, &pitch, size *  sizeof(float), 8));
 	pitch/=sizeof(float);
-	printf("pitch value %d", pitch);
+	printf("pitch value %zu", pitch);
 	spectralPb(eigvalue, devEigVec, width, height, nvec, devResult, pitch);
 	float* hostResult = (float*) malloc(sizeof(float)*pitch*8);
-	CUDA_SAFE_CALL(cudaMemcpy(hostResult, devResult, sizeof(float)*pitch*8, cudaMemcpyDeviceToHost) );
+	checkCudaErrors(cudaMemcpy(hostResult, devResult, sizeof(float)*pitch*8, cudaMemcpyDeviceToHost) );
 
 	for (int i = 0; i < 8 ; i++)
 	{
@@ -73,7 +73,7 @@ int main(int argc, char** argv)
 		printf("\n");
 	}
 
-	CUDA_SAFE_CALL(cudaFree(devResult));
+	checkCudaErrors(cudaFree(devResult));
 	free(eigvector);
 	free(eigvalue);
 }

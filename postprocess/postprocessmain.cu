@@ -37,17 +37,17 @@ void skeletonTest()
 
 
     float* devGPb, *devGPb_thin, *devMPb;
-    CUDA_SAFE_CALL(cudaMalloc((void**)&devGPb,nPixels*sizeof(float)));
-    CUDA_SAFE_CALL(cudaMalloc((void**)&devGPb_thin,nPixels*sizeof(float)));
-    CUDA_SAFE_CALL(cudaMalloc((void**)&devMPb,nPixels*sizeof(float)));
+    checkCudaErrors(cudaMalloc((void**)&devGPb,nPixels*sizeof(float)));
+    checkCudaErrors(cudaMalloc((void**)&devGPb_thin,nPixels*sizeof(float)));
+    checkCudaErrors(cudaMalloc((void**)&devMPb,nPixels*sizeof(float)));
 
-    CUDA_SAFE_CALL(cudaMemcpy(devGPb, in, nPixels*sizeof(float), cudaMemcpyHostToDevice));
-    CUDA_SAFE_CALL(cudaMemcpy(devGPb_thin, devGPb , nPixels*sizeof(float), cudaMemcpyDeviceToDevice));
-    CUDA_SAFE_CALL(cudaMemcpy(devMPb, devGPb , nPixels*sizeof(float), cudaMemcpyDeviceToDevice));
+    checkCudaErrors(cudaMemcpy(devGPb, in, nPixels*sizeof(float), cudaMemcpyHostToDevice));
+    checkCudaErrors(cudaMemcpy(devGPb_thin, devGPb , nPixels*sizeof(float), cudaMemcpyDeviceToDevice));
+    checkCudaErrors(cudaMemcpy(devMPb, devGPb , nPixels*sizeof(float), cudaMemcpyDeviceToDevice));
 
     PostProcess(width, height, width , devGPb, devMPb , devGPb_thin);
 
-    CUDA_SAFE_CALL(cudaMemcpy(out, devGPb_thin,  nPixels*sizeof(float), cudaMemcpyDeviceToHost));
+    checkCudaErrors(cudaMemcpy(out, devGPb_thin,  nPixels*sizeof(float), cudaMemcpyDeviceToHost));
     printf("GPU OUT\n");
     for(int y=0;y<height;y++)
     {
@@ -62,9 +62,9 @@ void skeletonTest()
     delete [] out;
     delete [] lut;
 
-    CUDA_SAFE_CALL(cudaFree(devGPb));
-    CUDA_SAFE_CALL(cudaFree(devMPb));
-    CUDA_SAFE_CALL(cudaFree(devGPb_thin));
+    checkCudaErrors(cudaFree(devGPb));
+    checkCudaErrors(cudaFree(devMPb));
+    checkCudaErrors(cudaFree(devGPb_thin));
 }
 
 int main()

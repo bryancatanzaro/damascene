@@ -3,6 +3,7 @@
 
 
 #include <cuda.h>
+#include <helper_image.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
@@ -47,7 +48,7 @@ int main(int argc, char** argv) {
   
   cudaMalloc((void**)&devMatrix, nDimension * nMatrixDimension * sizeof(float));
  
-	CUDA_SAFE_CALL(cudaMemcpy(devMatrix, hostMatrix, nMatrixDimension * nDimension * sizeof(float), cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(devMatrix, hostMatrix, nMatrixDimension * nDimension * sizeof(float), cudaMemcpyHostToDevice));
  
   struct timeval start;
   gettimeofday(&start, 0);
@@ -59,7 +60,7 @@ int main(int argc, char** argv) {
   generalizedEigensolve(myStencil, devMatrix, matrixPitchInFloats, getNEigs, &eigenValues, &devEigenVectors, fTolerance);
 
   float* eigenVectors = (float*)malloc(nMatrixDimension*sizeof(float)*getNEigs);
-  CUDA_SAFE_CALL(cudaMemcpy(eigenVectors, devEigenVectors, nMatrixDimension*getNEigs*sizeof(float), cudaMemcpyDeviceToHost));
+  checkCudaErrors(cudaMemcpy(eigenVectors, devEigenVectors, nMatrixDimension*getNEigs*sizeof(float), cudaMemcpyDeviceToHost));
   
 /*   initEigs(getNEigs, nMatrixDimension, &eigenValues, &eigenVectors); */
 
@@ -88,7 +89,7 @@ int main(int argc, char** argv) {
     fprintf(fp, "\n");
   }
   fclose(fp);
-  cutSavePGMf("eigvec1.pgm", eigenVectors+1*nMatrixDimension, width,height);
+  sdkSavePGM("eigvec1.pgm", eigenVectors+1*nMatrixDimension, width,height);
   
   fp = fopen("eigenValues.txt", "w");
 	for (int i = 0; i < getNEigs; i++) {

@@ -125,22 +125,22 @@ void skeletonize(int width, int height, int matrixPitchInFloats, float* devGPb_t
     plut = plut + 512;
     plut[176] = plut[180] = plut[240] = plut[244] = plut[432] = plut[436] = plut[496] = plut[500] = 1;
 
-    CUDA_SAFE_CALL(cudaMemcpyToSymbol(devLut, lutc, NUM_LUTS*512*sizeof(int)));
+    checkCudaErrors(cudaMemcpyToSymbol(devLut, lutc, NUM_LUTS*512*sizeof(int)));
     
     //bind image to texture
       
     cudaArray* imageArray;
     cudaChannelFormatDesc floatTex = cudaCreateChannelDesc<float>();
-    CUDA_SAFE_CALL(cudaMallocArray(&imageArray, &floatTex, matrixPitchInFloats , height));
-    CUDA_SAFE_CALL(cudaMemcpyToArray(imageArray, 0, 0, devGPb_thin, matrixPitchInFloats * height * sizeof(float), cudaMemcpyDeviceToDevice));
-    CUDA_SAFE_CALL(cudaBindTextureToArray(image, imageArray));
+    checkCudaErrors(cudaMallocArray(&imageArray, &floatTex, matrixPitchInFloats , height));
+    checkCudaErrors(cudaMemcpyToArray(imageArray, 0, 0, devGPb_thin, matrixPitchInFloats * height * sizeof(float), cudaMemcpyDeviceToDevice));
+    checkCudaErrors(cudaBindTextureToArray(image, imageArray));
 
     // skeletonize ; copy input image -> output image - till convergence
 
     int change;
 
     int* devchange;
-    CUDA_SAFE_CALL(cudaMalloc((void**)&devchange, sizeof(int)));
+    checkCudaErrors(cudaMalloc((void**)&devchange, sizeof(int)));
 
     dim3 block(16,16);
     dim3 grid( (width+block.x-1)/block.x, (height+block.y-1)/block.y );
@@ -149,20 +149,20 @@ void skeletonize(int width, int height, int matrixPitchInFloats, float* devGPb_t
     printf("Skeletonizing ... \n");
     do 
     {
-        CUDA_SAFE_CALL(cudaMemset(devchange, 0, sizeof(int)));
+        checkCudaErrors(cudaMemset(devchange, 0, sizeof(int)));
         for(int lutid = 0; lutid < NUM_LUTS; lutid++)
         {
             applyLut<<<grid, block>>> (width, height, matrixPitchInFloats, devGPb_thin, lutid, devchange);
-            CUDA_SAFE_CALL(cudaMemcpyToArray(imageArray, 0, 0, devGPb_thin, matrixPitchInFloats * height * sizeof(float), cudaMemcpyDeviceToDevice));
+            checkCudaErrors(cudaMemcpyToArray(imageArray, 0, 0, devGPb_thin, matrixPitchInFloats * height * sizeof(float), cudaMemcpyDeviceToDevice));
         }
-        CUDA_SAFE_CALL(cudaMemcpy(&change, devchange, sizeof(int), cudaMemcpyDeviceToHost));
+        checkCudaErrors(cudaMemcpy(&change, devchange, sizeof(int), cudaMemcpyDeviceToHost));
         iter++;
 
         printf("\tIteration = %d, %s\n", iter, (change > 0) ? "Image changed":"Image unchanged");
     }while(change != 0);
 
-    CUDA_SAFE_CALL(cudaFree(devchange));
-    CUDA_SAFE_CALL(cudaFreeArray(imageArray));
+    checkCudaErrors(cudaFree(devchange));
+    checkCudaErrors(cudaFreeArray(imageArray));
 
 }
 

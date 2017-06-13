@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cuda.h>
-#include <cutil.h>
+#include <helper_cuda.h>
 #include <assert.h>
 #include "Stencil.h"
 
@@ -544,23 +544,23 @@ void intervene(Stencil& theStencil, float* devMPb, float** p_devMatrix, float si
 /*   mPb.normalized = 0; */
   cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
   cudaArray* mPbArray;
-  CUDA_SAFE_CALL(cudaMallocArray(&mPbArray, &channelDesc, width, height));
-  CUDA_SAFE_CALL(cudaBindTextureToArray(mPb, mPbArray));
-  CUDA_SAFE_CALL(cudaMemcpy2DToArray(mPbArray, 0, 0, devMPb, sizeof(float) * width, sizeof(float) * width, height, cudaMemcpyDeviceToDevice));
+  checkCudaErrors(cudaMallocArray(&mPbArray, &channelDesc, width, height));
+  checkCudaErrors(cudaBindTextureToArray(mPb, mPbArray));
+  checkCudaErrors(cudaMemcpy2DToArray(mPbArray, 0, 0, devMPb, sizeof(float) * width, sizeof(float) * width, height, cudaMemcpyDeviceToDevice));
   size_t devMatrixPitch;
-  CUDA_SAFE_CALL(cudaMallocPitch((void**)p_devMatrix, &devMatrixPitch, nPixels * sizeof(float), nDimension));
+  checkCudaErrors(cudaMallocPitch((void**)p_devMatrix, &devMatrixPitch, nPixels * sizeof(float), nDimension));
   assert(devMatrixPitch == theStencil.getMatrixPitch());
   float* devMatrix = *p_devMatrix;
-  CUDA_SAFE_CALL(cudaMemset(devMatrix, 0, devMatrixPitch * nDimension));
+  checkCudaErrors(cudaMemset(devMatrix, 0, devMatrixPitch * nDimension));
   int hostDiagonalMap[CONSTSPACE];
   theStencil.copyDiagonalOffsets(hostDiagonalMap);
-  CUDA_SAFE_CALL(cudaMemcpyToSymbol(constDiagonals, hostDiagonalMap, sizeof(int) * diameter * diameter));
+  checkCudaErrors(cudaMemcpyToSymbol(constDiagonals, hostDiagonalMap, sizeof(int) * diameter * diameter));
   dim3 gridDim = dim3((width - 1)/XBLOCK + 1, (height - 1)/YBLOCK + 1);
   dim3 blockDim = dim3(XBLOCK, YBLOCK);
   
   findAffinities<<<gridDim, blockDim>>>(width, height, radius, diameter, 1.0f/sigma, devMatrix, matrixPitchInFloats);//, devScratch);
   symmetrizeMatrix<<<gridDim, blockDim>>>(width, height, radius, diameter, nDimension, devMatrix, matrixPitchInFloats);//, devScratch);
   cudaThreadSynchronize();
-  CUDA_SAFE_CALL(cudaUnbindTexture(mPb));
-  CUDA_SAFE_CALL(cudaFreeArray(mPbArray));
+  checkCudaErrors(cudaUnbindTexture(mPb));
+  checkCudaErrors(cudaFreeArray(mPbArray));
 }

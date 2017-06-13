@@ -1,13 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <cutil.h>
+#include <helper_cuda.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <cuda.h>
 #include "rotate.h"
 #include "convert.h"
-#include <cutil.h>
+#include <helper_cuda.h>
 #include <assert.h>
 
 
@@ -393,9 +393,9 @@ void formIntegralImages(int width, int height, int nbins, int* devImage,
   //cutStartTimer(integralTimer);
   //int pixelPitch = findPitchInInts(width * height);
   //int* devIntegralCol;
-  //CUDA_SAFE_CALL(cudaMalloc((void**)&devIntegralCol, sizeof(int) * width * height));
+  //checkCudaErrors(cudaMalloc((void**)&devIntegralCol, sizeof(int) * width * height));
   //int* devIntegralsT;
-  //CUDA_SAFE_CALL(cudaMalloc((void**)&devIntegralsT, sizeof(int) * pixelPitch * nbins));
+  //checkCudaErrors(cudaMalloc((void**)&devIntegralsT, sizeof(int) * pixelPitch * nbins));
  
   //int* hostIntegralCol = (int*)malloc(sizeof(int) * width * height);
   //int* devImageT;
@@ -459,14 +459,14 @@ void formIntegralImages(int width, int height, int nbins, int* devImage,
 float* getImage(uint width, uint height, float* devImage) {
   int imageSize = width * height * sizeof(float);
   float* result = (float*)malloc(imageSize);
-  CUDA_SAFE_CALL(cudaMemcpy(result, devImage, imageSize, cudaMemcpyDeviceToHost));
+  checkCudaErrors(cudaMemcpy(result, devImage, imageSize, cudaMemcpyDeviceToHost));
   return result;
 }
 
 int* getImage(uint width, uint height, int* devImage) {
   int imageSize = width * height * sizeof(int);
   int* result = (int*)malloc(imageSize);
-  CUDA_SAFE_CALL(cudaMemcpy(result, devImage, imageSize, cudaMemcpyDeviceToHost));
+  checkCudaErrors(cudaMemcpy(result, devImage, imageSize, cudaMemcpyDeviceToHost));
   return result;
 }
 
@@ -510,11 +510,11 @@ int initializeGradients(uint widthIn, uint heightIn, uint borderIn, uint maxbins
   borderWidth = width + 2 * border;
   borderHeight = height + 2 * border;
   
-  CUDA_SAFE_CALL(cudaMalloc((void**)&devGradients, sizeof(float) * norients * nscale * borderWidth * borderHeight));
-  CUDA_SAFE_CALL(cudaMalloc((void**)&devQuantized, sizeof(int) * width * height));
-  CUDA_SAFE_CALL(cudaMalloc((void**)&devMirrored, sizeof(int) * borderWidth * borderHeight));
-  CUDA_SAFE_CALL(cudaMalloc((void**)&devGradientA, sizeof(float) * width * height));
-  CUDA_SAFE_CALL(cudaMalloc((void**)&devGradientB, sizeof(float) * width * height));
+  checkCudaErrors(cudaMalloc((void**)&devGradients, sizeof(float) * norients * nscale * borderWidth * borderHeight));
+  checkCudaErrors(cudaMalloc((void**)&devQuantized, sizeof(int) * width * height));
+  checkCudaErrors(cudaMalloc((void**)&devMirrored, sizeof(int) * borderWidth * borderHeight));
+  checkCudaErrors(cudaMalloc((void**)&devGradientA, sizeof(float) * width * height));
+  checkCudaErrors(cudaMalloc((void**)&devGradientB, sizeof(float) * width * height));
 
   int maxWidth = borderWidth + borderHeight;
   int maxHeight = maxWidth;
@@ -524,28 +524,28 @@ int initializeGradients(uint widthIn, uint heightIn, uint borderIn, uint maxbins
   
 
   
-  CUDA_SAFE_CALL(cudaMalloc((void**)&devTurned, sizeof(int) * maxWidth * maxHeight));
-  CUDA_SAFE_CALL(cudaMalloc((void**)&devImageT, sizeof(int) * maxWidth * maxHeight));
-  CUDA_SAFE_CALL(cudaMalloc((void**)&devIntegralCol, sizeof(int) * maxWidth * maxHeight));
-  CUDA_SAFE_CALL(cudaMalloc((void**)&devIntegralColT, sizeof(int) * maxWidth * maxHeight));
-  //CUDA_SAFE_CALL(cudaMalloc((void**)&devIntegralsT, sizeof(int) * pixelPitch * maxBins));
-  CUDA_SAFE_CALL(cudaMalloc((void**)&devIntegrals, sizeof(int) * binPitch * maxWidth * maxHeight));
+  checkCudaErrors(cudaMalloc((void**)&devTurned, sizeof(int) * maxWidth * maxHeight));
+  checkCudaErrors(cudaMalloc((void**)&devImageT, sizeof(int) * maxWidth * maxHeight));
+  checkCudaErrors(cudaMalloc((void**)&devIntegralCol, sizeof(int) * maxWidth * maxHeight));
+  checkCudaErrors(cudaMalloc((void**)&devIntegralColT, sizeof(int) * maxWidth * maxHeight));
+  //checkCudaErrors(cudaMalloc((void**)&devIntegralsT, sizeof(int) * pixelPitch * maxBins));
+  checkCudaErrors(cudaMalloc((void**)&devIntegrals, sizeof(int) * binPitch * maxWidth * maxHeight));
   return binPitch;
 }
 
 
 void finalizeGradients() {
-  CUDA_SAFE_CALL(cudaFree(devIntegrals));
- /*  CUDA_SAFE_CALL(cudaFree(devIntegralsT)); */
-  CUDA_SAFE_CALL(cudaFree(devIntegralColT));
-  CUDA_SAFE_CALL(cudaFree(devIntegralCol));
-  CUDA_SAFE_CALL(cudaFree(devImageT));
-  CUDA_SAFE_CALL(cudaFree(devTurned));
-  CUDA_SAFE_CALL(cudaFree(devGradientB));
-  CUDA_SAFE_CALL(cudaFree(devGradientA));
-  CUDA_SAFE_CALL(cudaFree(devMirrored));
-  CUDA_SAFE_CALL(cudaFree(devQuantized));
-  CUDA_SAFE_CALL(cudaFree(devGradients));
+  checkCudaErrors(cudaFree(devIntegrals));
+ /*  checkCudaErrors(cudaFree(devIntegralsT)); */
+  checkCudaErrors(cudaFree(devIntegralColT));
+  checkCudaErrors(cudaFree(devIntegralCol));
+  checkCudaErrors(cudaFree(devImageT));
+  checkCudaErrors(cudaFree(devTurned));
+  checkCudaErrors(cudaFree(devGradientB));
+  checkCudaErrors(cudaFree(devGradientA));
+  checkCudaErrors(cudaFree(devMirrored));
+  checkCudaErrors(cudaFree(devQuantized));
+  checkCudaErrors(cudaFree(devGradients));
 }
 
 

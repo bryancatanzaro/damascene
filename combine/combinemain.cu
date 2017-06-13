@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cuda.h>
-#include <cutil.h>
+#include <helper_cuda.h>
 #include "combine.h"
 #include "stencilMVM.h"
 

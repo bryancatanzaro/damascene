@@ -1,6 +1,6 @@
 // vim: ts=4 syntax=cpp comments=
 
-#include <cutil.h>
+#include <helper_cuda.h>
 #include <cuda.h>
 #include <fstream>
 #include <math.h>
@@ -95,14 +95,14 @@ __global__ void devFindMax(int p_nSize, size_t p_nPitch, float* p_aafPB, float* 
 
 void initCudaArrays(int p_nSize, float** p_devMaxPB, int** p_devOri)
 {
-	CUDA_SAFE_CALL(cudaMalloc((void**)p_devMaxPB, p_nSize * sizeof(float)));
-	CUDA_SAFE_CALL(cudaMalloc((void**)p_devOri, p_nSize * sizeof(int)));
+	checkCudaErrors(cudaMalloc((void**)p_devMaxPB, p_nSize * sizeof(float)));
+	checkCudaErrors(cudaMalloc((void**)p_devOri, p_nSize * sizeof(int)));
 }
 
 void freeCudaArrays(float* p_devMaxPB, int* p_devOri)
 {
-	CUDA_SAFE_CALL(cudaFree(p_devMaxPB));
-	CUDA_SAFE_CALL(cudaFree(p_devOri));
+	checkCudaErrors(cudaFree(p_devMaxPB));
+	checkCudaErrors(cudaFree(p_devOri));
 }
 
 
@@ -385,8 +385,8 @@ void nonMaxSuppression(int p_nWidth, int p_nHeight, float* p_devPB, int p_nDevPB
 	//printf("\nNow Pitch %d size =%d", p_nDevPBPitch, size);
 	devFindMax<<<gridDim, blockDim>>>(size, p_nDevPBPitch, p_devPB, devMaxPB, devOri);
 
-	//CUDA_SAFE_CALL(cudaMemcpy(maxpb, devMaxPB, size * sizeof(float), cudaMemcpyDeviceToHost));
-	//CUDA_SAFE_CALL(cudaMemcpy(ori, devOri, size * sizeof(int), cudaMemcpyDeviceToHost));
+	//checkCudaErrors(cudaMemcpy(maxpb, devMaxPB, size * sizeof(float), cudaMemcpyDeviceToHost));
+	//checkCudaErrors(cudaMemcpy(ori, devOri, size * sizeof(int), cudaMemcpyDeviceToHost));
 
 
 	struct timeval stopMax;
@@ -407,8 +407,8 @@ void nonMaxSuppression(int p_nWidth, int p_nHeight, float* p_devPB, int p_nDevPB
 
 	devOriented_2D<<<gridDim, blockDim>>>(p_nHeight, p_nWidth, devNMax);
 
-	CUDA_SAFE_CALL(cudaUnbindTexture(texMax));
-	CUDA_SAFE_CALL(cudaUnbindTexture(texOrient));
+	checkCudaErrors(cudaUnbindTexture(texMax));
+	checkCudaErrors(cudaUnbindTexture(texOrient));
 
 	freeCudaArrays(devMaxPB, devOri);
 

@@ -1,7 +1,7 @@
 
 // vim: ts=4 syntax=cpp comments=
 
-#include <cutil.h>
+#include <helper_cuda.h>
 #include <cuda.h>
 #include "nonmax.h"
 #include <stdio.h>
@@ -32,8 +32,8 @@ void chooseLargestGPU(bool verbose)
 void dummy()
 {
 	float* test;
-	CUDA_SAFE_CALL(cudaMalloc((void**)&test, 100 * sizeof(float)));
-	CUDA_SAFE_CALL(cudaFree(test));
+	checkCudaErrors(cudaMalloc((void**)&test, 100 * sizeof(float)));
+	checkCudaErrors(cudaFree(test));
 }
 
 void PrintMatrix(char* filename, int p_nWidth, int p_nHeight, float* p_aaMatrix)
@@ -87,23 +87,23 @@ int main(int argc, char** argv)
 	float* devpb = 0;
 	size_t pitch = 0;
 	int size = width * height;
-	CUDA_SAFE_CALL(cudaMallocPitch((void**)&devpb, &pitch, size *  sizeof(float), 8));
+	checkCudaErrors(cudaMallocPitch((void**)&devpb, &pitch, size *  sizeof(float), 8));
 	pitch/=sizeof(float);
 	for (int i = 0; i < 8; i++)
 	{
-		CUDA_SAFE_CALL(cudaMemcpy((devpb)+i*pitch, pb+i*size, size * sizeof(float), cudaMemcpyHostToDevice));
+		checkCudaErrors(cudaMemcpy((devpb)+i*pitch, pb+i*size, size * sizeof(float), cudaMemcpyHostToDevice));
 	}
 	float* devNMax = 0;
-	CUDA_SAFE_CALL(cudaMalloc((void**)&devNMax, size * sizeof(float)));
+	checkCudaErrors(cudaMalloc((void**)&devNMax, size * sizeof(float)));
 
 	nonMaxSuppression(width, height, devpb, pitch, devNMax);
 
 	float* nmax = 0;
 	nmax = (float*)malloc(sizeof(float)*size);
-	CUDA_SAFE_CALL(cudaMemcpy(nmax, devNMax, size * sizeof(float), cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(nmax, devNMax, size * sizeof(float), cudaMemcpyDeviceToHost));
 
-	CUDA_SAFE_CALL(cudaFree(devNMax));
-	CUDA_SAFE_CALL(cudaFree(devpb));
+	checkCudaErrors(cudaFree(devNMax));
+	checkCudaErrors(cudaFree(devpb));
 
 	PrintMatrix("nmax.txt", width, height, nmax);
 	

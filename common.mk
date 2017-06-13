@@ -14,7 +14,7 @@ endif
 
 
 
-CUDA_SDK_PATH ?= $(HOME)/cuda
+CUDA_SDK_PATH ?= /usr/local/cuda/samples
 
 # Basic directory setup for SDK
 # (override directories only if they are not already defined)
@@ -26,9 +26,9 @@ ROOTOBJDIR ?= $(ROOTDIR)/obj
 ROOTSODIR  ?= $(ROOTDIR)/lib
 SODIR      ?= $(ROOTSODIR)/linux
 
-LIBDIR     := $(CUDA_SDK_PATH)/C/lib 
-COMMONDIR  := $(CUDA_SDK_PATH)/C/common
-ACMLDIR    ?= /opt/amd/acml4.3.0/ifort64
+LIBDIR     := $(CUDA_SDK_PATH)/common/lib
+COMMONDIR  := $(CUDA_SDK_PATH)/common
+ACMLDIR    ?= $(ROOTSODIR)/acml/ifort64
 
 ifdef cuda-2.1
   CUDALIBSUFFIX := lib
@@ -67,7 +67,7 @@ ifeq ($(USEGLLIB),1)
 endif
 
 # Libs
-LIB       := -L$(CUDA_INSTALL_PATH)/$(CUDALIBSUFFIX) -L$(LIBDIR) -L$(COMMONDIR)/lib -L$(ACMLDIR)/lib -lcuda -lcudart -lcublas -lblas -lacml -lacml_mv -L../stencilMatrixMultiply/lib/linux/release ${OPENGLLIB} ${LIB}
+LIB       := -L$(CUDA_INSTALL_PATH)/$(CUDALIBSUFFIX) -L$(LIBDIR) -L$(COMMONDIR)/lib -L$(ACMLDIR)/lib -L$(ROOTSODIR) -lcuda -lcudart -lcublas -lblas -lacml -L../stencilMatrixMultiply/lib/linux/release ${OPENGLLIB} ${LIB}
 
 # Warning flags
 CXXWARN_FLAGS := \
@@ -123,7 +123,7 @@ ifeq ($(shared),1)
 endif
 
 # append optional arch/SM version flags (such as -arch sm_11)
-SMVERSIONFLAGS ?= -arch sm_12
+SMVERSIONFLAGS ?= -arch sm_35
 #SMVERSIONFLAGS ?= -arch sm_11
 NVCCFLAGS += $(SMVERSIONFLAGS)
 
@@ -160,7 +160,7 @@ ifneq ($(STATIC_LIB),)
 	TARGET   := $(subst .a,$(LIBSUFFIX).a,$(LIBDIR)/$(STATIC_LIB))
 	LINKLINE  = ar qv $(TARGET) $(OBJS) 
 else
-	LIB += -lcutil$(LIBSUFFIX)
+	#LIB += -lcutil$(LIBSUFFIX)
 	# Device emulation configuration
 	ifeq ($(emu), 1)
 		NVCCFLAGS   += -deviceemu

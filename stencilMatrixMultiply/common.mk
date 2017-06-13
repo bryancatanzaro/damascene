@@ -12,7 +12,7 @@ ifdef cuda-install
 	CUDA_INSTALL_PATH := $(cuda-install)
 endif
 
-CUDA_SDK_PATH ?= $(HOME)/cuda
+CUDA_SDK_PATH ?= /usr/local/cuda/samples
 
 # Basic directory setup for SDK
 # (override directories only if they are not already defined)
@@ -24,7 +24,7 @@ ROOTOBJDIR ?= $(ROOTDIR)/obj
 ROOTSODIR  ?= $(ROOTDIR)/lib
 SODIR      ?= $(ROOTSODIR)/linux
 
-LIBDIR     := $(CUDA_SDK_PATH)/lib 
+LIBDIR     := $(CUDA_SDK_PATH)/common/lib
 COMMONDIR  := $(CUDA_SDK_PATH)/common
 
 # Compilers
@@ -56,7 +56,7 @@ ifeq ($(USEGLLIB),1)
 endif
 
 # Libs
-LIB       := -L$(CUDA_INSTALL_PATH)/lib -L$(LIBDIR) -L$(COMMONDIR)/lib -lcuda -lcudart -lblas ${OPENGLLIB} ${LIB}
+LIB       := -L$(CUDA_INSTALL_PATH)/lib -L$(LIBDIR) -L$(COMMONDIR)/lib -L$(ROOTSODIR) -lcuda -lcudart -lblas ${OPENGLLIB} ${LIB}
 
 # Warning flags
 CXXWARN_FLAGS := \
@@ -147,7 +147,7 @@ ifneq ($(STATIC_LIB),)
 	TARGET   := $(subst .a,$(LIBSUFFIX).a,$(LIBDIR)/$(STATIC_LIB))
 	LINKLINE  = ar qv $(TARGET) $(OBJS) 
 else
-	LIB += -lcutil$(LIBSUFFIX)
+	#LIB += -lcutil$(LIBSUFFIX)
 	# Device emulation configuration
 	ifeq ($(emu), 1)
 		NVCCFLAGS   += -deviceemu

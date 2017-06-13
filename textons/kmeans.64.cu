@@ -1,5 +1,5 @@
 #include <cuda.h>
-#include <cutil.h>
+#include <helper_cuda.h>
 #include "kmeans.h"
 #include <cublas.h>
 #include <stdio.h>
@@ -489,31 +489,31 @@ int kmeans(int nPixels, int width, int height, int clusterCount, int filterCount
 #endif
 
   int* devCentroidMass;
-  CUDA_SAFE_CALL(cudaMalloc((void**)&devCentroidMass, sizeof(int) * filterCount * clusterCount* afCopies));
+  checkCudaErrors(cudaMalloc((void**)&devCentroidMass, sizeof(int) * filterCount * clusterCount* afCopies));
   unsigned int* devCentroidCount;
-  CUDA_SAFE_CALL(cudaMalloc((void**)&devCentroidCount, sizeof(unsigned int) * filterCount * clusterCount* afCopies));
+  checkCudaErrors(cudaMalloc((void**)&devCentroidCount, sizeof(unsigned int) * filterCount * clusterCount* afCopies));
   float* devCentroids;
-  CUDA_SAFE_CALL(cudaMalloc((void**)&devCentroids, sizeof(float) * filterCount * clusterCount));
+  checkCudaErrors(cudaMalloc((void**)&devCentroids, sizeof(float) * filterCount * clusterCount));
   int* devChanges;
-  CUDA_SAFE_CALL(cudaMalloc((void**)&devChanges, sizeof(int)));
+  checkCudaErrors(cudaMalloc((void**)&devChanges, sizeof(int)));
 
   float* devPointsDots;
-  CUDA_SAFE_CALL(cudaMalloc((void**)&devPointsDots, sizeof(int) * nPixels));
+  checkCudaErrors(cudaMalloc((void**)&devPointsDots, sizeof(int) * nPixels));
   float* devCentroidsDots;
-  CUDA_SAFE_CALL(cudaMalloc((void**)&devCentroidsDots, sizeof(int) * clusterCount));
+  checkCudaErrors(cudaMalloc((void**)&devCentroidsDots, sizeof(int) * clusterCount));
   makeSelfDots<<<linearGrid, linearBlock>>>(devResponses, nPixels, devPointsDots, nPixels, filterCount);
 
   float* devDist;
   size_t devDistPitch;
-  CUDA_SAFE_CALL(cudaMallocPitch((void**)&devDist, &devDistPitch, sizeof(float) * nPixels, clusterCount));
+  checkCudaErrors(cudaMallocPitch((void**)&devDist, &devDistPitch, sizeof(float) * nPixels, clusterCount));
   int devDistPitchInFloats = devDistPitch/sizeof(float);
 
   int i;
   int hostChanges;
   for(i = 0; i < maxIter; i++) {
-    CUDA_SAFE_CALL(cudaMemset(devCentroidMass, 0, sizeof(int) * filterCount * clusterCount* afCopies));
-    CUDA_SAFE_CALL(cudaMemset(devCentroidCount, 0, sizeof(int) * clusterCount* afCopies));
-    CUDA_SAFE_CALL(cudaMemset(devChanges, 0, sizeof(int)));
+    checkCudaErrors(cudaMemset(devCentroidMass, 0, sizeof(int) * filterCount * clusterCount* afCopies));
+    checkCudaErrors(cudaMemset(devCentroidCount, 0, sizeof(int) * clusterCount* afCopies));
+    checkCudaErrors(cudaMemset(devChanges, 0, sizeof(int)));
     
 #ifndef __NO_ATOMIC
     findCentroids<<<linearGrid, linearBlock>>>(devIntResponses, nPixels, devClusters, devCentroidMass, devCentroidCount);
@@ -530,7 +530,7 @@ int kmeans(int nPixels, int width, int height, int clusterCount, int filterCount
     finishCentroids<<<clusterGrid, clusterBlock>>>(devCentroidMass, devCentroidCount, devCentroids);
     findSgemmLabels(devResponses, nPixels, nPixels, devCentroids, clusterCount, clusterCount, filterCount, devPointsDots, devCentroidsDots, devDist, devDistPitchInFloats, devClusters, devChanges);
 
-    CUDA_SAFE_CALL(cudaMemcpy(&hostChanges, devChanges, sizeof(int), cudaMemcpyDeviceToHost));
+    checkCudaErrors(cudaMemcpy(&hostChanges, devChanges, sizeof(int), cudaMemcpyDeviceToHost));
     printf("\tChanges: %d\n", hostChanges);
     if (hostChanges <= convThresh) {
       break;

@@ -1,6 +1,6 @@
 // vim: ts=4 syntax=cpp comments=
 
-#include <cuda.h>
+#include <helper_cuda.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
@@ -215,7 +215,7 @@ __global__ void generalizeVectors(int nPixels, int nVectors, float* devVectors, 
 int findPitchInFloats(int width) {
   float* test;
   size_t pitch;
-  CUDA_SAFE_CALL(cudaMallocPitch((void**)&test, &pitch, width * sizeof(float), 1));
+  checkCudaErrors(cudaMallocPitch((void**)&test, &pitch, width * sizeof(float), 1));
   cudaFree(test);
   return pitch/sizeof(float);
 }
@@ -243,9 +243,9 @@ float* convertMatrix(Stencil* theStencil, dim3 gridDim, dim3 blockDim, int nDime
   cudaMemcpyToSymbol(constOffsets, hostConstOffsets, sizeof(hostConstOffsets));
 
   float* devSum;
-  CUDA_SAFE_CALL(cudaMalloc((void**)&devSum, width * sizeof(float) * height));
+  checkCudaErrors(cudaMalloc((void**)&devSum, width * sizeof(float) * height));
   float* devRSqrtSum;
-  CUDA_SAFE_CALL(cudaMalloc((void**)&devRSqrtSum, width * sizeof(float) * height));
+  checkCudaErrors(cudaMalloc((void**)&devRSqrtSum, width * sizeof(float) * height));
 
   
   int nDimUnroll = findNDimUnroll(nDimension);
@@ -254,7 +254,7 @@ float* convertMatrix(Stencil* theStencil, dim3 gridDim, dim3 blockDim, int nDime
 /*   /\* float* hostSum = (float*)malloc(width * height * sizeof(float)); *\/ */
 /* /\*   memset(hostSum, 0, width * height * sizeof(float)); *\/ */
 
-/* /\*   CUDA_SAFE_CALL(cudaMemcpy(hostSum, devSum, width * sizeof(float) * height, cudaMemcpyDeviceToHost)); *\/ */
+/* /\*   checkCudaErrors(cudaMemcpy(hostSum, devSum, width * sizeof(float) * height, cudaMemcpyDeviceToHost)); *\/ */
 /* /\*   for(int row = 0; row < height; row++) { *\/ */
 /* /\*     for (int col = 0; col < width; col++) { *\/ */
 /* /\*       printf("%f ", hostSum[row * width + col]); *\/ */
@@ -268,7 +268,7 @@ float* convertMatrix(Stencil* theStencil, dim3 gridDim, dim3 blockDim, int nDime
 
 /* insert stuff here  
   float* hostMatrix = new float[matrixPitchInFloats*nDimension];
-  CUDA_SAFE_CALL(cudaMemcpy(hostMatrix, devMatrix, matrixPitchInFloats * sizeof(float) * nDimension, cudaMemcpyDeviceToHost)); 
+  checkCudaErrors(cudaMemcpy(hostMatrix, devMatrix, matrixPitchInFloats * sizeof(float) * nDimension, cudaMemcpyDeviceToHost)); 
  
    printf("Writing matrix to file ...\n");
    FILE* fpw = fopen("ungeneralized.sma", "w"); 
@@ -405,10 +405,10 @@ insert ends */
 /*   memset(hostSum, 0, width * height * sizeof(float)); */
   /* float* devSum; */
 /*   size_t devSumPitch; */
-/*   CUDA_SAFE_CALL(cudaMallocPitch((void**)&devSum, &devSumPitch, width *sizeof(float), height)); */
+/*   checkCudaErrors(cudaMallocPitch((void**)&devSum, &devSumPitch, width *sizeof(float), height)); */
 /*   stencilSumRows<<<gridDim, blockDim>>>(width, height, nPixels, radius, nDimension, devMatrix, widthPitchInFloats, devSum); */
 
- /*  CUDA_SAFE_CALL(cudaMemcpy2D(hostSum, width * sizeof(float), devSum, devSumPitch, width*sizeof(float), height, cudaMemcpyDeviceToHost)); */
+ /*  checkCudaErrors(cudaMemcpy2D(hostSum, width * sizeof(float), devSum, devSumPitch, width*sizeof(float), height, cudaMemcpyDeviceToHost)); */
 /*   for(int row = 0; row < height; row++) { */
 /*     for (int col = 0; col < width; col++) { */
 /*       printf("%f ", hostSum[row * width + col]); */
@@ -419,7 +419,7 @@ insert ends */
   
 //  unGeneralizeMatrix<<<gridDim, blockDim>>>(width, height, nPixels, radius, nDimension, devMatrix, widthPitchInFloats, devSum);
 
-  /* CUDA_SAFE_CALL(cudaMemcpy(hostMatrix, devMatrix, matrixPitchInFloats * sizeof(float) * nDimension, cudaMemcpyDeviceToHost)); */
+  /* checkCudaErrors(cudaMemcpy(hostMatrix, devMatrix, matrixPitchInFloats * sizeof(float) * nDimension, cudaMemcpyDeviceToHost)); */
   
 /*   FILE* fpw = fopen("ungeneralized.sma", "w"); */
 /*   fwrite(&nPixels, sizeof(int), 1, fpw); */

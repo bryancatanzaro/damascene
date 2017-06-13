@@ -105,18 +105,18 @@ void spectralPb(float *eigenvalues, float *eigenvectors, int xdim, int ydim, int
 		
 	// set up texture memory
 	cudaChannelFormatDesc floatTex = cudaCreateChannelDesc<float>();
-	CUDA_SAFE_CALL( cudaMallocArray(&a_Data, &floatTex, xdim_mirrored, ydim_mirrored) );
-	CUDA_SAFE_CALL( cudaBindTextureToArray(texData, a_Data) );		
+	checkCudaErrors( cudaMallocArray(&a_Data, &floatTex, xdim_mirrored, ydim_mirrored) );
+	checkCudaErrors( cudaBindTextureToArray(texData, a_Data) );		
 	
 	ts1 = timestamp();	
 	
 	// allocate space for result
-	CUDA_SAFE_CALL( cudaMalloc((void **)&d_Result, imagesize_mirrored*NUM_ORIENT) );
-	CUDA_SAFE_CALL( cudaMemset( d_Result, 0, imagesize_mirrored*NUM_ORIENT) );
+	checkCudaErrors( cudaMalloc((void **)&d_Result, imagesize_mirrored*NUM_ORIENT) );
+	checkCudaErrors( cudaMemset( d_Result, 0, imagesize_mirrored*NUM_ORIENT) );
 	h_Result = (float *) malloc(imagesize_mirrored*NUM_ORIENT);	
 	
 	// copy kernels to constant memory space
-	CUDA_SAFE_CALL( cudaMemcpyToSymbol(d_Kernels, h_Kernels, KERNEL_SIZE*NUM_ORIENT*sizeof(float)) );	
+	checkCudaErrors( cudaMemcpyToSymbol(d_Kernels, h_Kernels, KERNEL_SIZE*NUM_ORIENT*sizeof(float)) );	
 	
 	dim3 threadBlock(16, 12);
    dim3 blockGrid(iDivUp(xdim_mirrored, threadBlock.x), iDivUp(ydim_mirrored, threadBlock.y));
@@ -124,22 +124,22 @@ void spectralPb(float *eigenvalues, float *eigenvectors, int xdim, int ydim, int
    for (int i=0;i<nvec;i++) {	
 		eigenvector = eigenvectors_mirrored + i*(imagesize_mirrored/4);
 		// copy image to texture memory
-		CUDA_SAFE_CALL( cudaMemcpyToArray(a_Data, 0, 0, eigenvector, imagesize_mirrored, cudaMemcpyHostToDevice) );			
+		checkCudaErrors( cudaMemcpyToArray(a_Data, 0, 0, eigenvector, imagesize_mirrored, cudaMemcpyHostToDevice) );			
 				
 //  	printf("cspectralPb_kernel()\n");
-        CUDA_SAFE_CALL( cudaThreadSynchronize() );
+        checkCudaErrors( cudaThreadSynchronize() );
 //        CUT_SAFE_CALL( cutResetTimer(hTimer) );
 //        CUT_SAFE_CALL( cutStartTimer(hTimer) );
 		  spectralPb_kernel<<<blockGrid, threadBlock>>>(d_Result, xdim_mirrored, ydim_mirrored, 1/sqrt(eigenvalues[i]));
         CUT_CHECK_ERROR("spectralPb_kernel execution failed\n");
-        CUDA_SAFE_CALL( cudaThreadSynchronize() );
+        checkCudaErrors( cudaThreadSynchronize() );
 //        CUT_SAFE_CALL( cutStopTimer(hTimer) );
 //        gpuTime = cutGetTimerValue(hTimer);
 //    printf("...convolutionTex2D() time: %f msecs; //%f Mpix/s\n", gpuTime, xdim * ydim * 1e-6 / (0.001 * gpuTime));
 	}
 	
 //	printf("Reading back GPU results...\n");
-   CUDA_SAFE_CALL( cudaMemcpy(h_Result, d_Result, imagesize_mirrored*NUM_ORIENT, cudaMemcpyDeviceToHost) );
+   checkCudaErrors( cudaMemcpy(h_Result, d_Result, imagesize_mirrored*NUM_ORIENT, cudaMemcpyDeviceToHost) );
    
 	ts2 = timestamp();   
 	
@@ -178,9 +178,9 @@ void spectralPb(float *eigenvalues, float *eigenvectors, int xdim, int ydim, int
    
 	// clean up   
    
-   CUDA_SAFE_CALL( cudaUnbindTexture(texData) );
-   CUDA_SAFE_CALL( cudaFree(d_Result)   );
-   CUDA_SAFE_CALL( cudaFreeArray(a_Data)   );
+   checkCudaErrors( cudaUnbindTexture(texData) );
+   checkCudaErrors( cudaFree(d_Result)   );
+   checkCudaErrors( cudaFreeArray(a_Data)   );
    free(eigenvectors_mirrored);
 }   
    

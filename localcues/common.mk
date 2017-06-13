@@ -111,7 +111,7 @@ CWARN_FLAGS := $(CXXWARN_FLAGS) \
 
 # Compiler-specific flags
 #NVCCFLAGS := -Xptxas -v
-NVCCFLAGS:= -arch sm_12 -Xptxas -v
+NVCCFLAGS := -arch sm_35 -Xptxas -v
 CXXFLAGS  := $(CXXWARN_FLAGS)
 CFLAGS    := $(CWARN_FLAGS)
 
