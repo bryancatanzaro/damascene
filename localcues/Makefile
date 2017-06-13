@@ -20,5 +20,5 @@ LINKCUFILES := stencilMVM.cu convert.cu texton.cu kmeans.cu combine.cu
 
 verbose := 1
 
-SMVERSIONFLAGS := -arch sm_10
+SMVERSIONFLAGS := -arch sm_35
 include ../common.mk

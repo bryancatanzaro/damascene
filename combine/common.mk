@@ -82,7 +82,7 @@ CWARN_FLAGS := $(CXXWARN_FLAGS) \
 	-Wmain \
 
 # Compiler-specific flags
-NVCCFLAGS := -arch sm_12 -Xptxas -v -maxrregcount 32
+NVCCFLAGS := -arch sm_35 -Xptxas -v -maxrregcount 32
 CXXFLAGS  := $(CXXWARN_FLAGS)
 CFLAGS    := $(CWARN_FLAGS)
 

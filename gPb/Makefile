@@ -18,5 +18,5 @@ LINKCUFILES :=
 ################################################################################
 # Rules and targets
 
-SMVERSIONFLAGS := -arch sm_10
+SMVERSIONFLAGS := -arch sm_35
 include ../common.mk

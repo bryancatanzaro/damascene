@@ -123,7 +123,7 @@ ifeq ($(shared),1)
 endif
 
 # append optional arch/SM version flags (such as -arch sm_11)
-SMVERSIONFLAGS ?= -arch sm_12
+SMVERSIONFLAGS ?= -arch sm_35
 #SMVERSIONFLAGS ?= -arch sm_11
 NVCCFLAGS += $(SMVERSIONFLAGS)
 
