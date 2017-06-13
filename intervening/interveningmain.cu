@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cuda.h>
-#include <cutil.h>
+#include <helper_cuda.h>
 #include <assert.h>
 #include "intervening.h"
 #include "stencilMVM.h"
@@ -111,7 +111,7 @@ int main(int argc, char** argv) {
 /*   printf("\n"); */
 
   
-  /* CUDA_SAFE_CALL(cudaMemcpy(hostMatrix, devMatrix, devMatrixPitch * nDimension, cudaMemcpyDeviceToHost)); */
+  /* checkCudaErrors(cudaMemcpy(hostMatrix, devMatrix, devMatrixPitch * nDimension, cudaMemcpyDeviceToHost)); */
   /* int row = 3; */
 /*   int col = 6; */
 /*   printf("row: %i, col %i\n", row, col); */
@@ -172,7 +172,7 @@ int main(int argc, char** argv) {
 /*   } */
 /*   printf("\n"); */
   
-  CUDA_SAFE_CALL(cudaMemcpy(hostMatrix, devMatrix, devMatrixPitch * nDimension, cudaMemcpyDeviceToHost));
+  checkCudaErrors(cudaMemcpy(hostMatrix, devMatrix, devMatrixPitch * nDimension, cudaMemcpyDeviceToHost));
 /*   row = 3; */
 /*   col = 6; */
 /*   printf("row: %i, col %i\n", row, col); */
