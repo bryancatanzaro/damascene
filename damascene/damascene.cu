@@ -3,7 +3,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <cuda.h>
-#include <cutil.h>
+#include <helper_cuda.h>
+#include <helper_image.h>
 #include <fcntl.h>
 #include <float.h>
 #include <unistd.h>
@@ -249,35 +250,35 @@ int main(int argc, char** argv) {
   printf("Image found: %i x %i pixels\n", width, height);
   assert(width > 0);
   assert(height > 0);
-  uint timer;
+  StopWatchInterface *timer=NULL;
 #ifdef __TIMER_SPECFIC
-  uint timer_specific;
+  StopWatchInterface *timer_specific=NULL;
 #endif
 
-  unsigned int totalMemory, availableMemory;
+  size_t totalMemory, availableMemory;
   cuMemGetInfo(&availableMemory,&totalMemory );
-  printf("Available %u bytes on GPU\n", availableMemory);
+  printf("Available %zu bytes on GPU\n", availableMemory);
 
-  cutCreateTimer(&timer);
-  cutStartTimer(timer);
+  sdkCreateTimer(&timer);
+  sdkStartTimer(&timer);
  
 #ifdef __TIMER_SPECFIC
-  cutCreateTimer(&timer_specific);
-  cutStartTimer(timer_specific);
+  sdkCreateTimer(&timer_specific);
+  sdkStartTimer(&timer_specific);
 #endif
 
   float* devGreyscale;
   rgbUtoGreyF(width, height, devRgbU, &devGreyscale);
 
 #ifdef __TIMER_SPECFIC
-  cutStopTimer(timer_specific);
-  printf(">+< rgbUtoGrayF | %f | ms\n", cutGetTimerValue(timer_specific));
-  cutResetTimer(timer_specific);
-  cutStartTimer(timer_specific);
+  sdkStopTimer(&timer_specific);
+  printf(">+< rgbUtoGrayF | %f | ms\n", sdkGetTimerValue(&timer_specific));
+  sdkResetTimer(&timer_specific);
+  sdkStartTimer(&timer_specific);
 #endif
 
 //   float* hostG = (float*)malloc(sizeof(float) * nPixels); 
-//   CUDA_SAFE_CALL(cudaMemcpy(hostG, devGreyscale, height*width*sizeof(float),cudaMemcpyDeviceToHost));
+//   checkCudaErrors(cudaMemcpy(hostG, devGreyscale, height*width*sizeof(float),cudaMemcpyDeviceToHost));
 //   cutSavePGMf("grey.pgm", hostG, width, height);
 //   free(hostG);
 
@@ -297,10 +298,10 @@ int main(int argc, char** argv) {
 /*   cudaMalloc((void**)&devTextons, sizeof(int) * width * height); */
 /*   cudaMemcpy(devTextons, hostTextons, sizeof(int) * width * height, cudaMemcpyHostToDevice); */
 #ifdef __TIMER_SPECFIC
-  cutStopTimer(timer_specific);
-  printf(">+< texton | %f | ms\n", cutGetTimerValue(timer_specific));
-  cutResetTimer(timer_specific);
-  cutStartTimer(timer_specific);
+  sdkStopTimer(&timer_specific);
+  printf(">+< texton | %f | ms\n", sdkGetTimerValue(&timer_specific));
+  sdkResetTimer(&timer_specific);
+  sdkStartTimer(&timer_specific);
 #endif
 
   float* devL;
@@ -309,17 +310,17 @@ int main(int argc, char** argv) {
   rgbUtoLab3F(width, height, 2.5, devRgbU, &devL, &devA, &devB);
 
 #ifdef __TIMER_SPECFIC
-  cutStopTimer(timer_specific);
-  printf(">+< rgbUtoLab3F | %f | ms\n", cutGetTimerValue(timer_specific));
-  cutResetTimer(timer_specific);
-  cutStartTimer(timer_specific);
+  sdkStopTimer(&timer_specific);
+  printf(">+< rgbUtoLab3F | %f | ms\n", sdkGetTimerValue(&timer_specific));
+  sdkResetTimer(&timer_specific);
+  sdkStartTimer(&timer_specific);
 #endif
   normalizeLab(width, height, devL, devA, devB);
 #ifdef __TIMER_SPECFIC
-  cutStopTimer(timer_specific);
-  printf(">+< normalizeLab | %f | ms\n", cutGetTimerValue(timer_specific));
-  cutResetTimer(timer_specific);
-  cutStartTimer(timer_specific);
+  sdkStopTimer(&timer_specific);
+  printf(">+< normalizeLab | %f | ms\n", sdkGetTimerValue(&timer_specific));
+  sdkResetTimer(&timer_specific);
+  sdkStartTimer(&timer_specific);
 #endif
   int border = 30;
   int borderWidth = width + 2 * border;
@@ -334,10 +335,10 @@ int main(int argc, char** argv) {
   cudaFree(devRgbU);
   cudaFree(devGreyscale);
 #ifdef __TIMER_SPECFIC
-  cutStopTimer(timer_specific);
-  printf(">+< mirrorImage | %f | ms\n", cutGetTimerValue(timer_specific));
-  cutResetTimer(timer_specific);
-  cutStartTimer(timer_specific);
+  sdkStopTimer(&timer_specific);
+  printf(">+< mirrorImage | %f | ms\n", sdkGetTimerValue(&timer_specific));
+  sdkResetTimer(&timer_specific);
+  sdkStartTimer(&timer_specific);
 #endif
   float* devBg;
   float* devCga;
@@ -345,23 +346,24 @@ int main(int argc, char** argv) {
   float* devTg;
   int matrixPitchInFloats;
  
- uint localcuestimer; 
- cutCreateTimer(&localcuestimer);
- cutStartTimer(localcuestimer);
+ StopWatchInterface *localcuestimer=NULL; 
+ sdkCreateTimer(&localcuestimer);
+ sdkStartTimer(&localcuestimer);
 
   localCues(width, height, devL, devA, devB, devTextons, &devBg, &devCga, &devCgb, &devTg, &matrixPitchInFloats, nTextonChoice);
 
-  cutStopTimer(localcuestimer);
-  printf("localcues time: %f seconds\n", cutGetTimerValue(localcuestimer)/1000.0);
+  sdkStopTimer(&localcuestimer);
+  printf("localcues time: %f seconds\n", sdkGetTimerValue(&localcuestimer)/1000.0);
+  sdkDeleteTimer(&localcuestimer);
 
 #ifdef __TIMER_SPECFIC
-  cutStopTimer(timer_specific);
-  printf(">+< localcues | %f | ms\n", cutGetTimerValue(timer_specific));
-  cutResetTimer(timer_specific);
-  cutStartTimer(timer_specific);
+  sdkStopTimer(&timer_specific);
+  printf(">+< localcues | %f | ms\n", sdkGetTimerValue(&timer_specific));
+  sdkResetTimer(&timer_specific);
+  sdkStartTimer(&timer_specific);
 #endif
    //float* hostG = (float*)malloc(sizeof(float) * nPixels); 
-   //CUDA_SAFE_CALL(cudaMemcpy(hostG, devBg, height*width*sizeof(float),cudaMemcpyDeviceToHost));
+   //checkCudaErrors(cudaMemcpy(hostG, devBg, height*width*sizeof(float),cudaMemcpyDeviceToHost));
    //cutSavePGMf("Bg.pgm", hostG, width, height);
    //free(hostG);
 
@@ -388,26 +390,26 @@ int main(int argc, char** argv) {
   combine(width, height, matrixPitchInFloats, devBg, devCga, devCgb, devTg, &devMPbO, &devCombinedGradient, nTextonChoice);
 
 #ifdef __TIMER_SPECFIC
-  cutStopTimer(timer_specific);
-  printf(">+< combine | %f | ms\n", cutGetTimerValue(timer_specific));
-  cutResetTimer(timer_specific);
-  cutStartTimer(timer_specific);
+  sdkStopTimer(&timer_specific);
+  printf(">+< combine | %f | ms\n", sdkGetTimerValue(&timer_specific));
+  sdkResetTimer(&timer_specific);
+  sdkStartTimer(&timer_specific);
 #endif
 
-  CUDA_SAFE_CALL(cudaFree(devBg));
-  CUDA_SAFE_CALL(cudaFree(devCga));
-  CUDA_SAFE_CALL(cudaFree(devCgb));
-  CUDA_SAFE_CALL(cudaFree(devTg));
+  checkCudaErrors(cudaFree(devBg));
+  checkCudaErrors(cudaFree(devCga));
+  checkCudaErrors(cudaFree(devCgb));
+  checkCudaErrors(cudaFree(devTg));
 
   float* devMPb;
   cudaMalloc((void**)&devMPb, sizeof(float) * nPixels);
   nonMaxSuppression(width, height, devMPbO, matrixPitchInFloats, devMPb);
 
 #ifdef __TIMER_SPECFIC
-  cutStopTimer(timer_specific);
-  printf(">+< nonmaxsupression | %f | ms\n", cutGetTimerValue(timer_specific));
-  cutResetTimer(timer_specific);
-  cutStartTimer(timer_specific);
+  sdkStopTimer(&timer_specific);
+  printf(">+< nonmaxsupression | %f | ms\n", sdkGetTimerValue(&timer_specific));
+  sdkResetTimer(&timer_specific);
+  sdkStartTimer(&timer_specific);
 #endif
   
   //int devMatrixPitch = matrixPitchInFloats * sizeof(float);
@@ -421,10 +423,10 @@ int main(int argc, char** argv) {
   printf("Intervening contour completed\n");
  
 #ifdef __TIMER_SPECFIC
-  cutStopTimer(timer_specific);
-  printf(">+< intervene | %f | ms\n", cutGetTimerValue(timer_specific));
-  cutResetTimer(timer_specific);
-  cutStartTimer(timer_specific);
+  sdkStopTimer(&timer_specific);
+  printf(">+< intervene | %f | ms\n", sdkGetTimerValue(&timer_specific));
+  sdkResetTimer(&timer_specific);
+  sdkStartTimer(&timer_specific);
 #endif
 
   float* eigenvalues;
@@ -433,63 +435,65 @@ int main(int argc, char** argv) {
   generalizedEigensolve(theStencil, devMatrix, matrixPitchInFloats, nEigNum, &eigenvalues, &devEigenvectors, fEigTolerance);
 
 #ifdef __TIMER_SPECFIC
-  cutStopTimer(timer_specific);
-  printf(">+< generalizedEigensolve | %f | ms\n", cutGetTimerValue(timer_specific));
-  cutResetTimer(timer_specific);
-  cutStartTimer(timer_specific);
+  sdkStopTimer(&timer_specific);
+  printf(">+< generalizedEigensolve | %f | ms\n", sdkGetTimerValue(&timer_specific));
+  sdkResetTimer(&timer_specific);
+  sdkStartTimer(&timer_specific);
 #endif
   float* devSPb = 0;
   size_t devSPb_pitch = 0;
-  CUDA_SAFE_CALL(cudaMallocPitch((void**)&devSPb, &devSPb_pitch, nPixels *  sizeof(float), 8));
+  checkCudaErrors(cudaMallocPitch((void**)&devSPb, &devSPb_pitch, nPixels *  sizeof(float), 8));
   cudaMemset(devSPb, 0, matrixPitchInFloats * sizeof(float) * 8);
 
   spectralPb(eigenvalues, devEigenvectors, width, height, nEigNum, devSPb, matrixPitchInFloats);
 
 #ifdef __TIMER_SPECFIC
-  cutStopTimer(timer_specific);
-  printf(">+< spectralPb | %f | ms\n", cutGetTimerValue(timer_specific));
-  cutResetTimer(timer_specific);
-  cutStartTimer(timer_specific);
+  sdkStopTimer(&timer_specific);
+  printf(">+< spectralPb | %f | ms\n", sdkGetTimerValue(&timer_specific));
+  sdkResetTimer(&timer_specific);
+  sdkStartTimer(&timer_specific);
 #endif
   float* devGPb = 0;
-  CUDA_SAFE_CALL(cudaMalloc((void**)&devGPb, sizeof(float) * nPixels));
+  checkCudaErrors(cudaMalloc((void**)&devGPb, sizeof(float) * nPixels));
   float* devGPball = 0;
-  CUDA_SAFE_CALL(cudaMalloc((void**)&devGPball, sizeof(float) * matrixPitchInFloats * 8));
+  checkCudaErrors(cudaMalloc((void**)&devGPball, sizeof(float) * matrixPitchInFloats * 8));
   //StartCalcGPb(nPixels, matrixPitchInFloats, 8, devbg1, devbg2, devbg3, devcga1, devcga2, devcga3, devcgb1, devcgb2, devcgb3, devtg1, devtg2, devtg3, devSPb, devMPb, devGPball, devGPb);
   StartCalcGPb(nPixels, matrixPitchInFloats, 8, devCombinedGradient, devSPb, devMPb, devGPball, devGPb);
  
 #ifdef __TIMER_SPECFIC
-  cutStopTimer(timer_specific);
-  printf(">+< StartCalcGpb | %f | ms\n", cutGetTimerValue(timer_specific));
-  cutResetTimer(timer_specific);
-  cutStartTimer(timer_specific);
+  sdkStopTimer(&timer_specific);
+  printf(">+< StartCalcGpb | %f | ms\n", sdkGetTimerValue(&timer_specific));
+  sdkResetTimer(&timer_specific);
+  sdkStartTimer(&timer_specific);
 #endif
   float* devGPb_thin = 0;
-  CUDA_SAFE_CALL(cudaMalloc((void**)&devGPb_thin, nPixels * sizeof(float) ));
+  checkCudaErrors(cudaMalloc((void**)&devGPb_thin, nPixels * sizeof(float) ));
   PostProcess(width, height, width, devGPb, devMPb, devGPb_thin); //note: 3rd param width is the actual pitch of the image
   NormalizeGpbAll(nPixels, 8, matrixPitchInFloats, devGPball);
   
   cudaThreadSynchronize();
-  cutStopTimer(timer);
+  sdkStopTimer(&timer);
   printf("CUDA Status : %s\n", cudaGetErrorString(cudaGetLastError()));
 
 #ifdef __TIMER_SPECFIC
-  cutStopTimer(timer_specific);
-  printf(">+< PostProcess | %f | ms\n", cutGetTimerValue(timer_specific));
+  sdkStopTimer(&timer_specific);
+  printf(">+< PostProcess | %f | ms\n", sdkGetTimerValue(&timer_specific));
+  sdkDeleteTimer(&timer_specific);
 #endif
-  printf(">+< Computation time: | %f | seconds\n", cutGetTimerValue(timer)/1000.0);
+  printf(">+< Computation time: | %f | seconds\n", sdkGetTimerValue(&timer)/1000.0);
+  sdkDeleteTimer(&timer);
   float* hostGPb = (float*)malloc(sizeof(float)*nPixels);
   memset(hostGPb, 0, sizeof(float) * nPixels);
   cudaMemcpy(hostGPb, devGPb, sizeof(float)*nPixels, cudaMemcpyDeviceToHost);
   
-  cutSavePGMf(outputPGMfilename, hostGPb, width, height);
+  sdkSavePGM(outputPGMfilename, hostGPb, width, height);
   writeFile(outputPBfilename, width, height, hostGPb);
 
   /* thin image */
   float* hostGPb_thin = (float*)malloc(sizeof(float)*nPixels);
   memset(hostGPb_thin, 0, sizeof(float) * nPixels);
   cudaMemcpy(hostGPb_thin, devGPb_thin, sizeof(float)*nPixels, cudaMemcpyDeviceToHost);
-  cutSavePGMf(outputthinPGMfilename, hostGPb_thin, width, height);
+  sdkSavePGM(outputthinPGMfilename, hostGPb_thin, width, height);
   writeFile(outputthinPBfilename, width, height, hostGPb);
   free(hostGPb_thin);
   /* end thin image */
@@ -540,16 +544,16 @@ int main(int argc, char** argv) {
 /* 	} */
 /* 	fclose(fp); */
 
-/*  CUDA_SAFE_CALL(cudaFree(devBgcombined));
-  CUDA_SAFE_CALL(cudaFree(devCgacombined));
-  CUDA_SAFE_CALL(cudaFree(devCgbcombined));
-  CUDA_SAFE_CALL(cudaFree(devTgcombined));*/
+/*  checkCudaErrors(cudaFree(devBgcombined));
+  checkCudaErrors(cudaFree(devCgacombined));
+  checkCudaErrors(cudaFree(devCgbcombined));
+  checkCudaErrors(cudaFree(devTgcombined));*/
 
-  CUDA_SAFE_CALL(cudaFree(devEigenvectors));
-  CUDA_SAFE_CALL(cudaFree(devCombinedGradient));
-  CUDA_SAFE_CALL(cudaFree(devSPb));
-  CUDA_SAFE_CALL(cudaFree(devGPb));
-  CUDA_SAFE_CALL(cudaFree(devGPb_thin));
-  CUDA_SAFE_CALL(cudaFree(devGPball));
+  checkCudaErrors(cudaFree(devEigenvectors));
+  checkCudaErrors(cudaFree(devCombinedGradient));
+  checkCudaErrors(cudaFree(devSPb));
+  checkCudaErrors(cudaFree(devGPb));
+  checkCudaErrors(cudaFree(devGPb_thin));
+  checkCudaErrors(cudaFree(devGPball));
 
 }

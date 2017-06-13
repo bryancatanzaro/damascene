@@ -26,7 +26,7 @@ SODIR      ?= $(ROOTSODIR)/linux
 
 LIBDIR     := $(CUDA_SDK_PATH)/lib 
 COMMONDIR  := $(CUDA_SDK_PATH)/common
-ACMLDIR    := /opt/amd/acml4.1.0/ifort64
+ACMLDIR    := $(ROOTSODIR)/acml/ifort64
 
 # Compilers
 NVCC       := nvcc 
