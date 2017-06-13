@@ -3,19 +3,20 @@
 #include <stdlib.h>
 #include "convert.h"
 #include "stencilMVM.h"
-#include <cutil.h>
+#include <helper_cuda.h>
+#include <helper_image.h>
 
 float* getImage(uint width, uint height, float* devImage) {
   int imageSize = width * height * sizeof(float);
   float* result = (float*)malloc(imageSize);
-  CUDA_SAFE_CALL(cudaMemcpy(result, devImage, imageSize, cudaMemcpyDeviceToHost));
+  checkCudaErrors(cudaMemcpy(result, devImage, imageSize, cudaMemcpyDeviceToHost));
   return result;
 }
 
 int* getImage(uint width, uint height, int* devImage) {
   int imageSize = width * height * sizeof(int);
   int* result = (int*)malloc(imageSize);
-  CUDA_SAFE_CALL(cudaMemcpy(result, devImage, imageSize, cudaMemcpyDeviceToHost));
+  checkCudaErrors(cudaMemcpy(result, devImage, imageSize, cudaMemcpyDeviceToHost));
   return result;
 }
 
@@ -50,7 +51,8 @@ int main(int argc, char** argv) {
   unsigned int height;
   unsigned int* devRgbU;
   loadPPM_rgbU(filename, &width, &height, &devRgbU);
-  printf("Width: %i, height: %i\n", width, height, devRgbU);
+  //printf("Width: %i, height: %i\n", width, height, devRgbU);
+  printf("Width: %i, height: %i\n", width, height);
   float* devL;
   float* devA;
   float* devB;
@@ -73,8 +75,8 @@ int main(int argc, char** argv) {
   int borderHeight = 2 * border + height;
   float* borderedGrey = getImage(borderWidth, borderHeight, devBorderedGrey);
   writeTextImage("borderedGrey.txt", borderWidth, borderHeight, borderedGrey);
-  cutSavePGMf("borderedGrey.pgm", borderedGrey, borderWidth, borderHeight);
-  cutSavePGMf("grey.pgm", grey, width, height);
+  sdkSavePGM("borderedGrey.pgm", borderedGrey, borderWidth, borderHeight);
+  sdkSavePGM("grey.pgm", grey, width, height);
   int* devQuantizedBorderedGrey;
   quantizeImage(borderWidth, borderHeight, 25, devBorderedGrey, &devQuantizedBorderedGrey);
   int* quantizedBorderedGrey = getImage(borderWidth, borderHeight, devQuantizedBorderedGrey);
