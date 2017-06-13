@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <cutil.h>
+#include <helper_cuda.h>
 
 #include "spec.h"
 
@@ -25,7 +25,7 @@ static inline void cuda_parabola_allocate(int norients, int width, int height, i
     cudaChannelFormatDesc ch;
     ch = cudaCreateChannelDesc<float>();
 
-    CUDA_SAFE_CALL(
+    checkCudaErrors(
         cudaMallocArray(&cuda_parabola_pixels, &ch, border_width, border_height*norients) );
 
     tex_parabola_pixels.addressMode[0] = cudaAddressModeClamp;
@@ -33,19 +33,19 @@ static inline void cuda_parabola_allocate(int norients, int width, int height, i
     tex_parabola_pixels.filterMode = cudaFilterModePoint;
     tex_parabola_pixels.normalized = 0;
 
-   /*  CUDA_SAFE_CALL( */
+   /*  checkCudaErrors( */
 /*         cudaBindTextureToArray(tex_parabola_pixels, cuda_parabola_pixels) ); */
 
-    CUDA_SAFE_CALL(
+    checkCudaErrors(
       cudaMalloc((void**)&cuda_parabola_trace, width*height*norients*sizeof(float)) );
 }
 
 static inline void cuda_parabola_free()
 {
-  //    CUDA_SAFE_CALL(cudaUnbindTexture(tex_parabola_pixels));
-    CUDA_SAFE_CALL(cudaFreeArray(cuda_parabola_pixels));
-    CUDA_SAFE_CALL(cudaFree(cuda_parabola_trace));
-    //CUDA_SAFE_CALL(cudaFree(cuda_parabola_filters));
+  //    checkCudaErrors(cudaUnbindTexture(tex_parabola_pixels));
+    checkCudaErrors(cudaFreeArray(cuda_parabola_pixels));
+    checkCudaErrors(cudaFree(cuda_parabola_trace));
+    //checkCudaErrors(cudaFree(cuda_parabola_filters));
 }
 
 static inline void copy_cuda_parabola_buffers(int norients, int width, int height, int border, float *devPixels, int filter_radius, int filter_length, float* host_filters)
@@ -54,16 +54,16 @@ static inline void copy_cuda_parabola_buffers(int norients, int width, int heigh
     int border_height = height+2*border;
 
     // copy pixels
-    CUDA_SAFE_CALL(
+    checkCudaErrors(
         cudaMemcpy2DToArray(cuda_parabola_pixels, 0, 0, devPixels, border_width*sizeof(int), border_width*sizeof(int), border_height*norients, cudaMemcpyDeviceToDevice) );
 
     // copy const buffers (filters)
-    CUDA_SAFE_CALL(
+    checkCudaErrors(
        cudaMemcpyToSymbol(const_parabola_filters, host_filters, norients*filter_length*filter_length*sizeof(float)) );
 
 
-    //CUDA_SAFE_CALL(cudaMalloc((void**)&cuda_parabola_filters, sizeof(float)*filter_length*filter_length*norients));
-    //CUDA_SAFE_CALL(cudaMemcpy(cuda_parabola_filters, host_filters, filter_length*filter_length*norients*sizeof(float), cudaMemcpyHostToDevice));
+    //checkCudaErrors(cudaMalloc((void**)&cuda_parabola_filters, sizeof(float)*filter_length*filter_length*norients));
+    //checkCudaErrors(cudaMemcpy(cuda_parabola_filters, host_filters, filter_length*filter_length*norients*sizeof(float), cudaMemcpyHostToDevice));
 
 	//cudaChannelFormatDesc channelMax = cudaCreateChannelDesc<float>();
 	//size_t offset = 0;
@@ -76,7 +76,7 @@ static inline void cuda_parabola_kernel(int norients, int width, int height, int
 {
     cudaError_t err;
 
-    CUDA_SAFE_CALL(cudaBindTextureToArray(tex_parabola_pixels, cuda_parabola_pixels) );
+    checkCudaErrors(cudaBindTextureToArray(tex_parabola_pixels, cuda_parabola_pixels) );
     dim3 grid(width/16+1, height*norients/16+1, 1);
     dim3 threads(16, 16, 1);
 
@@ -98,10 +98,10 @@ static inline void cuda_parabola_kernel(int norients, int width, int height, int
     for(int i = 0; i < norients; i++) {
       cudaMemcpy(devResult + cuePitchInFloats * i, cuda_parabola_trace + nPixels * i, nPixels*sizeof(float), cudaMemcpyDeviceToDevice);
     }
-    CUDA_SAFE_CALL(cudaUnbindTexture(tex_parabola_pixels));
-    //CUDA_SAFE_CALL(cudaUnbindTexture(tex_parabola_filters));
+    checkCudaErrors(cudaUnbindTexture(tex_parabola_pixels));
+    //checkCudaErrors(cudaUnbindTexture(tex_parabola_filters));
  
-/*     CUDA_SAFE_CALL( */
+/*     checkCudaErrors( */
 /*         cudaMemcpy(host_gradient, cuda_parabola_trace, width*height*norients*sizeof(float), cudaMemcpyDeviceToHost) ); */
 
 #if 0

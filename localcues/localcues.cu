@@ -184,16 +184,17 @@ void bg(uint width, uint height, uint norients, uint nscale, uint* bgRadii, floa
   uint borderWidth = width + 2 * border;
   uint borderHeight = height + 2 * border;
   float* devGradients = gradients(devL, nbins, blur, sigma, bgRadii, textonChoice);
-  uint cueTimer;
-  cutCreateTimer(&cueTimer);
-  cutStartTimer(cueTimer);
+  StopWatchInterface *cueTimer=NULL;
+  sdkCreateTimer(&cueTimer);
+  sdkStartTimer(&cueTimer);
   for(int scale = 0; scale < nscale; scale++) {
     int radius = bgRadii[scale];
     int length = 2*radius + 1;
     gpu_parabola(norients, width, height, border, &devGradients[borderWidth * borderHeight * norients * scale], radius, length, filters[scale], devBg + cuePitchInFloats * norients * scale, cuePitchInFloats);
   }
-  cutStopTimer(cueTimer);
-  printf(">+< \tBgsmooth: | %f | ms\n", cutGetTimerValue(cueTimer));
+  sdkStopTimer(&cueTimer);
+  printf(">+< \tBgsmooth: | %f | ms\n", sdkGetTimerValue(&cueTimer));
+  sdkDeleteTimer(&cueTimer);
 }
 
 void cg(uint width, uint height, uint norients, uint nscale, uint* cgRadii, float** filters, float* devInput, float** p_devCg, int cuePitchInFloats, int textonChoice)
@@ -211,16 +212,17 @@ void cg(uint width, uint height, uint norients, uint nscale, uint* cgRadii, floa
   uint borderHeight = height + 2 * border;
   
   float* devGradients = gradients(devInput, nbins, blur, sigma, cgRadii, textonChoice);
-  uint cueTimer;
-  cutCreateTimer(&cueTimer);
-  cutStartTimer(cueTimer);
+  StopWatchInterface *cueTimer=NULL;
+  sdkCreateTimer(&cueTimer);
+  sdkStartTimer(&cueTimer);
   for(int scale = 0; scale < nscale; scale++) {
     int radius = cgRadii[scale];
     int length = 2*radius + 1;
     gpu_parabola(norients, width, height, border, &devGradients[borderWidth * borderHeight * norients * scale], radius, length, filters[scale], devCg + cuePitchInFloats * norients * scale, cuePitchInFloats);
   }
-  cutStopTimer(cueTimer);
-  printf(">+< \tCgsmooth: | %f | ms\n", cutGetTimerValue(cueTimer));
+  sdkStopTimer(&cueTimer);
+  printf(">+< \tCgsmooth: | %f | ms\n", sdkGetTimerValue(&cueTimer));
+  sdkDeleteTimer(&cueTimer);
 }
 
 void tg(uint width, uint height, uint norients, uint nscale, uint* tgRadii, float** filters, int* devTextons, float** p_devTg, int cuePitchInFloats, int textonChoice)
@@ -241,16 +243,17 @@ void tg(uint width, uint height, uint norients, uint nscale, uint* tgRadii, floa
   uint borderHeight = height + 2 * border;
   
   float* devGradients = gradients(devTextons, nbins, blur, sigma, tgRadii, textonChoice);  
-  uint cueTimer;
-  cutCreateTimer(&cueTimer);
-  cutStartTimer(cueTimer);
+  StopWatchInterface *cueTimer=NULL;
+  sdkCreateTimer(&cueTimer);
+  sdkStartTimer(&cueTimer);
   for(int scale = 0; scale < nscale; scale++) {
     int radius = tgRadii[scale];
     int length = 2*radius + 1;
     gpu_parabola(norients, width, height, border, &devGradients[borderWidth * borderHeight * norients * scale], radius, length, filters[scale], devTg + cuePitchInFloats * norients * scale, cuePitchInFloats);
   }
-  cutStopTimer(cueTimer);
-  printf(">+< \tTgsmooth: | %f | ms\n", cutGetTimerValue(cueTimer));
+  sdkStopTimer(&cueTimer);
+  printf(">+< \tTgsmooth: | %f | ms\n", sdkGetTimerValue(&cueTimer));
+  sdkDeleteTimer(&cueTimer);
 }
 
 
@@ -270,29 +273,28 @@ void localCues(int width, int height, float* devL, float* devA, float* devB, int
   gpu_parabola_init(norients, width, height, border);
 
   
-  uint cueTimer;
-  cutCreateTimer(&cueTimer);
-  cutStartTimer(cueTimer);
+  StopWatchInterface *cueTimer=NULL;
+  sdkCreateTimer(&cueTimer);
+  sdkStartTimer(&cueTimer);
   bg(width, height, norients, nscale, &radii[0], &filters[0], devL, devBg, cuePitchInFloats, p_nTextonChoice);
-  cutStopTimer(cueTimer);
-  printf(">+< \tBg: | %f | ms\n", cutGetTimerValue(cueTimer));
-  cutResetTimer(cueTimer);
-  cutStartTimer(cueTimer);
+  sdkStopTimer(&cueTimer);
+  printf(">+< \tBg: | %f | ms\n", sdkGetTimerValue(&cueTimer));
+  sdkResetTimer(&cueTimer);
+  sdkStartTimer(&cueTimer);
   cg(width, height, norients, nscale, &radii[1], &filters[1], devA, devCga, cuePitchInFloats, p_nTextonChoice);
-  cutStopTimer(cueTimer);
-  printf(">+< \tCga: | %f | ms\n", cutGetTimerValue(cueTimer));
-  cutResetTimer(cueTimer);
-  cutStartTimer(cueTimer);
+  sdkStopTimer(&cueTimer);
+  printf(">+< \tCga: | %f | ms\n", sdkGetTimerValue(&cueTimer));
+  sdkResetTimer(&cueTimer);
+  sdkStartTimer(&cueTimer);
   cg(width, height, norients, nscale, &radii[1], &filters[1], devB, devCgb, cuePitchInFloats, p_nTextonChoice);
-  cutStopTimer(cueTimer);
-  printf(">+< \tCgb: | %f | ms\n", cutGetTimerValue(cueTimer));
-  cutResetTimer(cueTimer);
-  cutStartTimer(cueTimer);
+  sdkStopTimer(&cueTimer);
+  printf(">+< \tCgb: | %f | ms\n", sdkGetTimerValue(&cueTimer));
+  sdkResetTimer(&cueTimer);
+  sdkStartTimer(&cueTimer);
   tg(width, height, norients, nscale, &radii[1], &filters[1], devTextons, devTg, cuePitchInFloats, p_nTextonChoice);
-  cutStopTimer(cueTimer);
-  printf(">+< \tTg: | %f | ms\n", cutGetTimerValue(cueTimer));
-  cutResetTimer(cueTimer);
- 
+  sdkStopTimer(&cueTimer);
+  printf(">+< \tTg: | %f | ms\n", sdkGetTimerValue(&cueTimer));
+  sdkDeleteTimer(&cueTimer);
   cudaThreadSynchronize();
   finalizeGradients();
   gpu_parabola_cleanup();
