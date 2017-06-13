@@ -36,7 +36,7 @@ void PrintVectorOnFile(int p_nSize, float* vec, char* filename)
 {
 	FILE* fo = fopen(filename, "w");
 	float* tempVec = (float*) malloc(p_nSize*sizeof(float));
-	CUDA_SAFE_CALL(cudaMemcpy(tempVec, vec, p_nSize*sizeof(float), cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(tempVec, vec, p_nSize*sizeof(float), cudaMemcpyDeviceToHost));
 	for (int i = 0; i < p_nSize; i++)
 		fprintf(fo, "%f\n", tempVec[i]);
 	fclose(fo);
@@ -50,7 +50,7 @@ void clearTestMatrix(float* sMatrixValues) {
 void initEigs(int p_nEigNum, int p_nMatrixDimension, float** p_eigenValues, float** devEigVectors)
 {
   (*p_eigenValues) = (float*) malloc(p_nEigNum * sizeof(float));
-  CUDA_SAFE_CALL(cudaMalloc((void**)devEigVectors, p_nMatrixDimension * sizeof(float)*p_nEigNum);)
+  checkCudaErrors(cudaMalloc((void**)devEigVectors, p_nMatrixDimension * sizeof(float)*p_nEigNum));
   //memset(*p_eigenValues, 0, p_nEigNum * sizeof(float));
   //memset(*p_eigenVectors, 0, p_nEigNum * p_nMatrixDimension * sizeof(float));
 }
@@ -149,7 +149,7 @@ void calcEigs(int width, int height, int p_nEigNum, int p_nMatrixDimension, int 
 	int tVecLength = p_nIter + 1;
 	size_t tEigenVectorPitch;
 	float* devTEigVecs;
-	CUDA_SAFE_CALL(cudaMallocPitch((void**)&devTEigVecs, &tEigenVectorPitch, tVecLength * sizeof(float), p_nEigNum));
+	checkCudaErrors(cudaMallocPitch((void**)&devTEigVecs, &tEigenVectorPitch, tVecLength * sizeof(float), p_nEigNum));
 
 	float* devEigVecs;
 	size_t eigenVectorPitch;
@@ -214,7 +214,7 @@ void lanczosIteration(float* d_aaDMatrixV, int k, int i, float* d_aVectorQQ,
 ///        }
 ///
 	//printf("Iteration %d : Read from %d -- Write to %d storing = %d\n", iteration, read, write, storeVectors );
-        CUDA_SAFE_CALL(cudaMemcpy(devVector, d_aVectorQQ, nPixels * sizeof(float), cudaMemcpyDeviceToDevice));
+        checkCudaErrors(cudaMemcpy(devVector, d_aVectorQQ, nPixels * sizeof(float), cudaMemcpyDeviceToDevice));
 
         //r= A*qq 
 	stencilMVM<<<gridDim, blockDim>>>(width, height, nPixels, nDiags, nDimUnroll, 
@@ -257,19 +257,19 @@ void lanczosIteration(float* d_aaDMatrixV, int k, int i, float* d_aVectorQQ,
                     
                     float *RitzGPU=0;
                     size_t RitzGPUPitch;
-                    CUDA_SAFE_CALL(cudaMallocPitch((void**)&RitzGPU, &RitzGPUPitch, sizeof(float)*IterationsToDo, p_nEigNum));
-                    CUDA_SAFE_CALL(cudaMemcpy2D(RitzGPU, RitzGPUPitch, RitzVectors+k*(maxIterationsThatFitGPU-1), (nIterations+1)*sizeof(float), IterationsToDo*sizeof(float), p_nEigNum, cudaMemcpyHostToDevice));
+                    checkCudaErrors(cudaMallocPitch((void**)&RitzGPU, &RitzGPUPitch, sizeof(float)*IterationsToDo, p_nEigNum));
+                    checkCudaErrors(cudaMemcpy2D(RitzGPU, RitzGPUPitch, RitzVectors+k*(maxIterationsThatFitGPU-1), (nIterations+1)*sizeof(float), IterationsToDo*sizeof(float), p_nEigNum, cudaMemcpyHostToDevice));
                     assert(RitzGPU != NULL); 
                     
                     cublasSgemm('n','n',p_nMatrixDimension, p_nEigNum, IterationsToDo,  1.0, d_aaDMatrixV, p_nMatrixDimension, RitzGPU, RitzGPUPitch/sizeof(float), 1.0, p_eigenVectors, p_nMatrixDimension );
                    
                     
-                    CUDA_SAFE_CALL(cudaFree(RitzGPU));
+                    checkCudaErrors(cudaFree(RitzGPU));
                     //printf("multiplied 0-%d with ritz vectors %d-%d \n", IterationsToDo-1, k*(maxIterationsThatFitGPU-1),k*(maxIterationsThatFitGPU-1)+IterationsToDo-1);
                 
                 }
 
-		CUDA_SAFE_CALL(cudaMemcpy( d_aaDMatrixV ,  d_aaDMatrixV + (i)*p_nMatrixDimension, sizeof(float)*p_nMatrixDimension*2, cudaMemcpyDeviceToDevice));
+		checkCudaErrors(cudaMemcpy( d_aaDMatrixV ,  d_aaDMatrixV + (i)*p_nMatrixDimension, sizeof(float)*p_nMatrixDimension*2, cudaMemcpyDeviceToDevice));
 		//printf("Copied %d %d to 0 1\n", i, i+1);
 	}
 
@@ -410,9 +410,9 @@ void lanczos(int p_nMatrixDimension, dim3 gridDim, dim3 blockDim,
 		printf("Error in line %d in %s : %s\n",__LINE__,__FILE__, cudaGetErrorString(ce));
 		//return;
 	}
-        unsigned int totalMemory, availableMemory;
+        size_t totalMemory, availableMemory;
         cuMemGetInfo(&availableMemory,&totalMemory );
-        printf("Available %u bytes on GPU\n", availableMemory);
+        printf("Available %zu bytes on GPU\n", availableMemory);
 
         float margin = 0.9;
         int maxIterationsThatFitGPU;
@@ -565,9 +565,9 @@ void lanczos(int p_nMatrixDimension, dim3 gridDim, dim3 blockDim,
         printf("nIterations = %d\n", i+1);
 
         size_t eigenVectorPitch;
-        CUDA_SAFE_CALL(cudaMemset(devEigVectors, 0, p_nMatrixDimension * sizeof(float)*p_nEigNum));
-        //CUDA_SAFE_CALL(cudaMallocPitch((void**)&devEigVectors, &eigenVectorPitch, p_nMatrixDimension * sizeof(float), p_nEigNum));
-        //CUDA_SAFE_CALL(cudaMemset(devEigVectors, 0, eigenVectorPitch*p_nEigNum));
+        checkCudaErrors(cudaMemset(devEigVectors, 0, p_nMatrixDimension * sizeof(float)*p_nEigNum));
+        //checkCudaErrors(cudaMallocPitch((void**)&devEigVectors, &eigenVectorPitch, p_nMatrixDimension * sizeof(float), p_nEigNum));
+        //checkCudaErrors(cudaMemset(devEigVectors, 0, eigenVectorPitch*p_nEigNum));
 
         if(i < maxIterationsThatFitGPU)
         {
@@ -903,7 +903,7 @@ __global__ void NormalizationDev(int p_nMatrixDimension, int p_nEigNum, float* p
 void PrintCudaVector(int p_nSize, float* p_devVec)
 {
 	float* vec = (float*) malloc(p_nSize*sizeof(float));
-	CUDA_SAFE_CALL(cudaMemcpy(vec, p_devVec, p_nSize*sizeof(float), cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(vec, p_devVec, p_nSize*sizeof(float), cudaMemcpyDeviceToHost));
 	for (int i = 0; i < p_nSize; i++)
 	{
 		printf("\n %d : %f", i, vec[i]);
@@ -933,8 +933,8 @@ void NormalizeEigVecDev(int p_nMatrixDimension, float* p_devEig, int p_nEigNum)
 	dim3 gridDim(blockNum, 1);
 	float* devReduceMax = 0;
 	float* devReduceMin = 0;
-	CUDA_SAFE_CALL(cudaMalloc((void**)&devReduceMin, blockNum*sizeof(float)*(MAXEIGNUM-1)));
-	CUDA_SAFE_CALL(cudaMalloc((void**)&devReduceMax, blockNum*sizeof(float)*(MAXEIGNUM-1)));
+	checkCudaErrors(cudaMalloc((void**)&devReduceMin, blockNum*sizeof(float)*(MAXEIGNUM-1)));
+	checkCudaErrors(cudaMalloc((void**)&devReduceMax, blockNum*sizeof(float)*(MAXEIGNUM-1)));
 
 	int maxLevel = 0;
 	int temp = XBLOCK;
@@ -949,8 +949,8 @@ void NormalizeEigVecDev(int p_nMatrixDimension, float* p_devEig, int p_nEigNum)
 	float* devFinalMin = 0;
 
 
-	CUDA_SAFE_CALL(cudaMalloc((void**)&devFinalMax, MAXEIGNUM*sizeof(float)));
-	CUDA_SAFE_CALL(cudaMalloc((void**)&devFinalMin, MAXEIGNUM*sizeof(float)));
+	checkCudaErrors(cudaMalloc((void**)&devFinalMax, MAXEIGNUM*sizeof(float)));
+	checkCudaErrors(cudaMalloc((void**)&devFinalMin, MAXEIGNUM*sizeof(float)));
 	dim3 oneGrid(1,1);
 	FindMaxMinPerGrid<<<oneGrid, blockDim>>>(blockNum, p_nEigNum, devReduceMax, devReduceMin,devFinalMax, devFinalMin, maxLevel);
 
@@ -959,10 +959,10 @@ void NormalizeEigVecDev(int p_nMatrixDimension, float* p_devEig, int p_nEigNum)
 	NormalizationDev<<<gridDim2, blockDim>>>(p_nMatrixDimension, p_nEigNum, p_devEig + p_nMatrixDimension, devFinalMax, devFinalMin);
 
 
-	CUDA_SAFE_CALL(cudaFree(devReduceMax));
-	CUDA_SAFE_CALL(cudaFree(devReduceMin));
-	CUDA_SAFE_CALL(cudaFree(devFinalMin));
-	CUDA_SAFE_CALL(cudaFree(devFinalMax));
+	checkCudaErrors(cudaFree(devReduceMax));
+	checkCudaErrors(cudaFree(devReduceMin));
+	checkCudaErrors(cudaFree(devFinalMin));
+	checkCudaErrors(cudaFree(devFinalMax));
 
 
 }
@@ -1022,7 +1022,7 @@ void NormalizeEigVecs(int p_nMatrixDimension, float* p_aaEigVecs, int p_nEigNum)
   
 /*   cudaMalloc((void**)&devMatrix, nDimension * nPixels * sizeof(float)); */
  
-/* 	CUDA_SAFE_CALL(cudaMemcpy(devMatrix, hostMatrix, nPixels * nDimension * sizeof(float), cudaMemcpyHostToDevice)); */
+/* 	checkCudaErrors(cudaMemcpy(devMatrix, hostMatrix, nPixels * nDimension * sizeof(float), cudaMemcpyHostToDevice)); */
  
 /*   struct timeval start; */
 /*   gettimeofday(&start, 0); */
@@ -1095,7 +1095,7 @@ void generalizedEigensolve(Stencil& myStencil, float* devMatrix, int matrixPitch
   NormalizeEigVecDev(nMatrixDimension, *devEigVectors, getNEigs);
 
 //  float* p_eigenvectors = new float[width*height];
-//  CUDA_SAFE_CALL(cudaMemcpy(p_eigenvectors, *devEigVectors+10*nMatrixDimension, width*height*sizeof(float), cudaMemcpyDeviceToHost));
+//  checkCudaErrors(cudaMemcpy(p_eigenvectors, *devEigVectors+10*nMatrixDimension, width*height*sizeof(float), cudaMemcpyDeviceToHost));
 //  cutSavePGMf("eigvec1.pgm", p_eigenvectors, width,height);
 //  delete [] p_eigenvectors;
 }
