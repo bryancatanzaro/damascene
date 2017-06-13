@@ -239,7 +239,7 @@ int main(int argc, char** argv) {
   int nTextonChoice = TEXTON32;
 
   parsingCommand(argc, argv, nEigNum, fEigTolerance, nTextonChoice);
-  printf("\n Eig %d Tol %f Texton %d", nEigNum, fEigTolerance, nTextonChoice);
+  printf("\nEig %d Tol %f Texton %d\n", nEigNum, fEigTolerance, nTextonChoice);
 
   
   uint width;
