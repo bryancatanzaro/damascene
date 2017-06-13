@@ -1,7 +1,7 @@
 #include <cuda.h>
 #include "filters.h"
 #include "kmeans.h"
-#include <cutil.h>
+#include <helper_cuda.h>
 #include <stdio.h>
 
 #define TEXTON64 2
@@ -94,15 +94,15 @@ void findTextons(int width, int height, float* devImage, int** p_devTextons, int
 //  }
 //  delete[] f;
 
-  CUDA_SAFE_CALL(cudaMalloc((void**)&devResponses, sizeof(float)*nPixels*filterCount));
-  //CUDA_SAFE_CALL(cudaMemcpyToSymbol(radii, hRadii, sizeof(hRadii)));
-  CUDA_SAFE_CALL(cudaMemcpyToSymbol(radii, hRadii, filterCount*sizeof(int)));
-  //CUDA_SAFE_CALL(cudaMemcpyToSymbol(coefficients, hCoefficients, sizeof(hCoefficients)));
-  //CUDA_SAFE_CALL(cudaMemcpyToSymbol(coefficients, hCoefficients, nFilterCoefficients* sizeof(float)));
+  checkCudaErrors(cudaMalloc((void**)&devResponses, sizeof(float)*nPixels*filterCount));
+  //checkCudaErrors(cudaMemcpyToSymbol(radii, hRadii, sizeof(hRadii)));
+  checkCudaErrors(cudaMemcpyToSymbol(radii, hRadii, filterCount*sizeof(int)));
+  //checkCudaErrors(cudaMemcpyToSymbol(coefficients, hCoefficients, sizeof(hCoefficients)));
+  //checkCudaErrors(cudaMemcpyToSymbol(coefficients, hCoefficients, nFilterCoefficients* sizeof(float)));
   
   float* devcoefficients;
-  CUDA_SAFE_CALL(cudaMalloc((void**)&devcoefficients, nFilterCoefficients* sizeof(float)));
-  CUDA_SAFE_CALL(cudaMemcpy(devcoefficients, hCoefficients, nFilterCoefficients* sizeof(float), cudaMemcpyHostToDevice));
+  checkCudaErrors(cudaMalloc((void**)&devcoefficients, nFilterCoefficients* sizeof(float)));
+  checkCudaErrors(cudaMemcpy(devcoefficients, hCoefficients, nFilterCoefficients* sizeof(float), cudaMemcpyHostToDevice));
 
   cudaChannelFormatDesc channelMax = cudaCreateChannelDesc<float>();
   size_t offset = 0;
@@ -110,9 +110,9 @@ void findTextons(int width, int height, float* devImage, int** p_devTextons, int
   
   cudaArray* imageArray;
   cudaChannelFormatDesc floatTex = cudaCreateChannelDesc<float>();
-  CUDA_SAFE_CALL(cudaMallocArray(&imageArray, &floatTex, width, height));
-  CUDA_SAFE_CALL(cudaMemcpyToArray(imageArray, 0, 0, devImage, nPixels * sizeof(float), cudaMemcpyDeviceToDevice));
-  CUDA_SAFE_CALL(cudaBindTextureToArray(image, imageArray));
+  checkCudaErrors(cudaMallocArray(&imageArray, &floatTex, width, height));
+  checkCudaErrors(cudaMemcpyToArray(imageArray, 0, 0, devImage, nPixels * sizeof(float), cudaMemcpyDeviceToDevice));
+  checkCudaErrors(cudaBindTextureToArray(image, imageArray));
   printf("Convolving\n");
   dim3 gridDim = dim3((width - 1)/XBLOCK + 1, (height - 1)/YBLOCK + 1);
   dim3 blockDim = dim3(XBLOCK, YBLOCK);
@@ -121,8 +121,8 @@ void findTextons(int width, int height, float* devImage, int** p_devTextons, int
   
   kmeans(p_nTextonChoice, nPixels, width, height, clusterCount, filterCount, devResponses, p_devTextons);
  
-  CUDA_SAFE_CALL(cudaFreeArray(imageArray));
-  CUDA_SAFE_CALL(cudaFree(devResponses));
+  checkCudaErrors(cudaFreeArray(imageArray));
+  checkCudaErrors(cudaFree(devResponses));
 
   free(hRadii);
   free(hCoefficients);

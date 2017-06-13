@@ -292,7 +292,9 @@ void gaussian_2D(
    float* mrotate = new float[(2*support_x + 1)*(2*support_y + 1)];
    compute_rotate_2D(m, mrotate, mx_size, my_size, 2*support_x + 1, 2*support_y + 1, ori);
 
-   delete [] m,mx,my;
+   delete [] m;
+   delete [] mx;
+   delete [] my;
    m = mrotate;
    int size=(2*support_x + 1)*(2*support_y + 1);
    //m = rotate_2D_crop(m, ori, 2*support_x + 1, 2*support_y + 1);
