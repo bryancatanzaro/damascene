@@ -1,6 +1,6 @@
 // vim: ts=4 syntax=cpp comments=
 
-#include <cutil.h>
+#include <helper_cuda.h>
 #include <cuda.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,8 +33,8 @@ void chooseLargestGPU(bool verbose)
 void dummy()
 {
 	float* test;
-	CUDA_SAFE_CALL(cudaMalloc((void**)&test, 100 * sizeof(float)));
-	CUDA_SAFE_CALL(cudaFree(test));
+	checkCudaErrors(cudaMalloc((void**)&test, 100 * sizeof(float)));
+	checkCudaErrors(cudaFree(test));
 }
 
 size_t ReadOneMatrix(FILE* infile, float** devArray, int orient)
@@ -53,17 +53,17 @@ size_t ReadOneMatrix(FILE* infile, float** devArray, int orient)
 	size_t pitch = 0;
 	if (orient > 1)
 	{
-		CUDA_SAFE_CALL(cudaMallocPitch((void**)devArray, &pitch, 154401 *  sizeof(float), orient));
+		checkCudaErrors(cudaMallocPitch((void**)devArray, &pitch, 154401 *  sizeof(float), orient));
 		pitch/=sizeof(float);
 		for (int i = 0; i < orient; i++)
 		{
-			CUDA_SAFE_CALL(cudaMemcpy((*devArray)+i*pitch, tempArray+i*154401, 154401 * sizeof(float), cudaMemcpyHostToDevice));
+			checkCudaErrors(cudaMemcpy((*devArray)+i*pitch, tempArray+i*154401, 154401 * sizeof(float), cudaMemcpyHostToDevice));
 		}
 	}
 	else
 	{
-		CUDA_SAFE_CALL(cudaMalloc((void**)devArray, 154401 * sizeof(float)));
-		CUDA_SAFE_CALL(cudaMemcpy((*devArray), tempArray, 154401 * sizeof(float), cudaMemcpyHostToDevice));
+		checkCudaErrors(cudaMalloc((void**)devArray, 154401 * sizeof(float)));
+		checkCudaErrors(cudaMemcpy((*devArray), tempArray, 154401 * sizeof(float), cudaMemcpyHostToDevice));
 	}
 	//printf("\n Pitch %d ", pitch);
 	return pitch;
@@ -116,20 +116,20 @@ void ClearAllMemory(
 		float* devspb,
 		float* devmpb)
 {
-	CUDA_SAFE_CALL(cudaFree(devbg1));
-	CUDA_SAFE_CALL(cudaFree(devbg2));
-	CUDA_SAFE_CALL(cudaFree(devbg3));
-	CUDA_SAFE_CALL(cudaFree(devcga1));
-	CUDA_SAFE_CALL(cudaFree(devcga2));
-	CUDA_SAFE_CALL(cudaFree(devcga3));
-	CUDA_SAFE_CALL(cudaFree(devcgb1));
-	CUDA_SAFE_CALL(cudaFree(devcgb2));
-	CUDA_SAFE_CALL(cudaFree(devcgb3));
-	CUDA_SAFE_CALL(cudaFree(devtg1));
-	CUDA_SAFE_CALL(cudaFree(devtg2));
-	CUDA_SAFE_CALL(cudaFree(devtg3));
-	CUDA_SAFE_CALL(cudaFree(devspb));
-	CUDA_SAFE_CALL(cudaFree(devmpb));
+	checkCudaErrors(cudaFree(devbg1));
+	checkCudaErrors(cudaFree(devbg2));
+	checkCudaErrors(cudaFree(devbg3));
+	checkCudaErrors(cudaFree(devcga1));
+	checkCudaErrors(cudaFree(devcga2));
+	checkCudaErrors(cudaFree(devcga3));
+	checkCudaErrors(cudaFree(devcgb1));
+	checkCudaErrors(cudaFree(devcgb2));
+	checkCudaErrors(cudaFree(devcgb3));
+	checkCudaErrors(cudaFree(devtg1));
+	checkCudaErrors(cudaFree(devtg2));
+	checkCudaErrors(cudaFree(devtg3));
+	checkCudaErrors(cudaFree(devspb));
+	checkCudaErrors(cudaFree(devmpb));
 }
 
 void StartGlobalPb()
@@ -154,16 +154,16 @@ void StartGlobalPb()
 	float* hostResult = (float*)malloc(154401*sizeof(float));
 	int pitch = 0;
 
-	CUDA_SAFE_CALL(cudaMalloc((void**)&result, 154401 * sizeof(float)));
+	checkCudaErrors(cudaMalloc((void**)&result, 154401 * sizeof(float)));
 
 	ReadFromFile(&pitch, &bg1, &bg2, &bg3, &cga1, &cga2, &cga3, &cgb1, &cgb2, &cgb3, &tg1, &tg2, &tg3, &spb, &mpb);
 	//printf("\nPitch = %d\n", pitch);
 	//StartCalcGPb(154401, pitch, 8, bg1, bg2, bg3, cga1, cga2, cga3, cgb1, cgb2, cgb3, tg1, tg2, tg3, spb, mpb, result);
 
-	CUDA_SAFE_CALL(cudaMemcpy(hostResult, result, 154401 * sizeof(float), cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(hostResult, result, 154401 * sizeof(float), cudaMemcpyDeviceToHost));
 
 	ClearAllMemory(bg1, bg2, bg3, cga1, cga2, cga3, cgb1, cgb2, cgb3, tg1, tg2, tg3, spb, mpb);
-	CUDA_SAFE_CALL(cudaFree(result));
+	checkCudaErrors(cudaFree(result));
 
 	for (int i = 0; i < 481; i++)
 	{

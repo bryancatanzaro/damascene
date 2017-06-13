@@ -1,7 +1,7 @@
 #ifndef GLOBALPB
 #define GLOBALPB
 
-#include <cutil.h>
+#include <helper_cuda.h>
 #include <cuda.h>
 
 #define IMUL(a, b) __mul24(a, b)
