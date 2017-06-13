@@ -605,6 +605,7 @@ void dispatchGradient(bool tg, int width, int height, int border, int nbins, flo
   
   dim3 gridDim = dim3(width, 1);
   dim3 blockDim = dim3(nbins, UNROLL);
+  size_t sharedMemoryPerThread = 3 * UNROLL * sizeof(float);
  
   int hostRectangleOffsets[8];
   for(int i = 0; i < 8; i++) {
@@ -617,7 +618,7 @@ void dispatchGradient(bool tg, int width, int height, int border, int nbins, flo
   
   if (!tg) {
     blockDim = dim3(32, UNROLL);
-    
+    const int nThreads = 48;
     int kernelRadius;
     int kernelLength;
     //float sigma = 0.10 * float(nbins);
@@ -630,11 +631,12 @@ void dispatchGradient(bool tg, int width, int height, int border, int nbins, flo
     //printf("Kernel length: %d, radius = %d\n", kernelLength, kernelRadius);
     cudaMemcpyToSymbol(blurKernel, hostKernel, sizeof(float) * kernelLength);
 
-    computeGradient<48, 25, true, false><<<gridDim, blockDim>>>(width, height, width * height, border, rotatedWidth, topNorm, bottomNorm, kernelRadius, kernelLength, devIntegrals, integralImagePitchInInts, devGradientA);
-    computeGradient<48, 25, true, true><<<gridDim, blockDim>>>(width, height, width * height, border, rotatedWidth, leftNorm, rightNorm, kernelRadius, kernelLength, devIntegrals, integralImagePitchInInts, devGradientB);
+    computeGradient<nThreads, 25, true, false><<<gridDim, blockDim, nThreads * sharedMemoryPerThread>>>(width, height, width * height, border, rotatedWidth, topNorm, bottomNorm, kernelRadius, kernelLength, devIntegrals, integralImagePitchInInts, devGradientA);
+    computeGradient<nThreads, 25, true, true><<<gridDim, blockDim, nThreads * sharedMemoryPerThread>>>(width, height, width * height, border, rotatedWidth, leftNorm, rightNorm, kernelRadius, kernelLength, devIntegrals, integralImagePitchInInts, devGradientB);
   } else {
-    computeGradient<32, 32, false, false><<<gridDim, blockDim>>>(width, height, width * height, border, rotatedWidth, topNorm, bottomNorm, 0, 0, devIntegrals, integralImagePitchInInts, devGradientA);
-    computeGradient<32, 32, false, true><<<gridDim, blockDim>>>(width, height, width * height, border, rotatedWidth, leftNorm, rightNorm, 0, 0, devIntegrals, integralImagePitchInInts, devGradientB);
+    const int nThreads = 32;
+    computeGradient<nThreads, 32, false, false><<<gridDim, blockDim, nThreads * sharedMemoryPerThread>>>(width, height, width * height, border, rotatedWidth, topNorm, bottomNorm, 0, 0, devIntegrals, integralImagePitchInInts, devGradientA);
+    computeGradient<nThreads, 32, false, true><<<gridDim, blockDim, nThreads * sharedMemoryPerThread>>>(width, height, width * height, border, rotatedWidth, leftNorm, rightNorm, 0, 0, devIntegrals, integralImagePitchInInts, devGradientB);
   }
 }
 
@@ -767,6 +769,7 @@ void dispatchGradient_64(int width, int height, int border, int nbins, float the
   
   dim3 gridDim = dim3(width, 1);
   dim3 blockDim = dim3(nbins, UNROLL);
+  size_t sharedMemoryPerThread = 3 * UNROLL * sizeof(float);
  
   int hostRectangleOffsets[8];
   for(int i = 0; i < 8; i++) {
@@ -779,7 +782,7 @@ void dispatchGradient_64(int width, int height, int border, int nbins, float the
   
   if (nbins == 25) {
     blockDim = dim3(32, UNROLL);
-    
+    const int nThreads = 48;
     int kernelRadius;
     int kernelLength;
     //float sigma = 0.10 * float(nbins);
@@ -792,11 +795,12 @@ void dispatchGradient_64(int width, int height, int border, int nbins, float the
     //printf("Kernel length: %d, radius = %d\n", kernelLength, kernelRadius);
     cudaMemcpyToSymbol(blurKernel, hostKernel, sizeof(float) * kernelLength);
 
-    computeGradient<48, 25, true, false><<<gridDim, blockDim>>>(width, height, width * height, border, rotatedWidth, topNorm, bottomNorm, kernelRadius, kernelLength, devIntegrals, integralImagePitchInInts, devGradientA);
-    computeGradient<48, 25, true, true><<<gridDim, blockDim>>>(width, height, width * height, border, rotatedWidth, leftNorm, rightNorm, kernelRadius, kernelLength, devIntegrals, integralImagePitchInInts, devGradientB);
+    computeGradient<nThreads, 25, true, false><<<gridDim, blockDim, nThreads * sharedMemoryPerThread>>>(width, height, width * height, border, rotatedWidth, topNorm, bottomNorm, kernelRadius, kernelLength, devIntegrals, integralImagePitchInInts, devGradientA);
+    computeGradient<nThreads, 25, true, true><<<gridDim, blockDim, nThreads * sharedMemoryPerThread>>>(width, height, width * height, border, rotatedWidth, leftNorm, rightNorm, kernelRadius, kernelLength, devIntegrals, integralImagePitchInInts, devGradientB);
   } else if (nbins == 64) {
-    computeGradient<64, 64, false, false><<<gridDim, blockDim>>>(width, height, width * height, border, rotatedWidth, topNorm, bottomNorm, 0, 0, devIntegrals, integralImagePitchInInts, devGradientA);
-    computeGradient<64, 64, false, true><<<gridDim, blockDim>>>(width, height, width * height, border, rotatedWidth, leftNorm, rightNorm, 0, 0, devIntegrals, integralImagePitchInInts, devGradientB);
+    const int nThreads = 64;
+    computeGradient<nThreads, 64, false, false><<<gridDim, blockDim, nThreads * sharedMemoryPerThread>>>(width, height, width * height, border, rotatedWidth, topNorm, bottomNorm, 0, 0, devIntegrals, integralImagePitchInInts, devGradientA);
+    computeGradient<nThreads, 64, false, true><<<gridDim, blockDim, nThreads * sharedMemoryPerThread>>>(width, height, width * height, border, rotatedWidth, leftNorm, rightNorm, 0, 0, devIntegrals, integralImagePitchInInts, devGradientB);
   }
 }
 
