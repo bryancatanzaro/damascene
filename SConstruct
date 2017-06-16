@@ -87,7 +87,7 @@ env.Append(CCFLAGS = ['-O3'])
 cwd = os.getcwd()
 env.Append(CPPPATH = [os.path.join(cwd, 'include')])    
 
-env.Append(LIBS = ['cudart', 'cuda', 'cublas'])
+env.Append(LIBS = ['cudart', 'cuda', 'cublas', 'm', 'stdc++'])
 
 
 Export('env')

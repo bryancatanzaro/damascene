@@ -180,8 +180,9 @@ def Environment():
                         allowed_values = ('release', 'debug')))
 
   # add a variable to handle compute capability
-  vars.Add(EnumVariable('arch', 'Compute capability code generation', 'sm_20',
-                        allowed_values = ('sm_10', 'sm_11', 'sm_12', 'sm_13', 'sm_20', 'sm_21', 'sm_30', 'sm_35')))
+  vars.Add(EnumVariable('arch', 'Compute capability code generation', 'sm_52',
+                        allowed_values = ('sm_10', 'sm_11', 'sm_12', 'sm_13', 'sm_20', 'sm_21', 'sm_30', 'sm_35',
+                                          'sm_50', 'sm_52', 'sm_60')))
 
   # add a variable to handle warnings
   if os.name == 'posix':
